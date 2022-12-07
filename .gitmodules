@@ -1,0 +1,4 @@
+[submodule "src/mas_simulation"]
+	path = src/mas_simulation
+	url = git@github.com:NU-IDEAS-Lab/mas_simulation.git
+	branch = master
