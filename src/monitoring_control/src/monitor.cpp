@@ -51,14 +51,14 @@
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-#include <std_msgs/Int16MultiArray.h>
-#include <std_msgs/String.h>
+#include <std_msgs/msg/Int16MultiArray.h>
+#include <std_msgs/msg/String.h>
 
 using namespace std;
 
 #include "getgraph.h"
 #include "message_types.h"
-#include "patrolling_sim/GoToStartPosSrv.h"
+#include "patrolling_sim/srv/GoToStartPosSrv.h"
 
 #define NUM_MAX_ROBOTS 32
 #define DEAD_ROBOT_TIME 300.0 // (seconds) time from last goal reached after which a robot is considered dead
