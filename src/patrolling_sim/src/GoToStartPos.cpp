@@ -17,7 +17,7 @@
  
  void cmd_velCB(const geometry_msgs::Twist::ConstPtr& msg){
      //ROS_INFO("receiving cmd_vels");
-     last_cmd_vel_time = ros::Time::now().toSec();
+     last_cmd_vel_time = rclcpp::Time::now().toSec();
  }
  
 
@@ -55,7 +55,7 @@
     
     //array of pointers:
     MoveBaseClient *ac_ptr[teamsize];
-    ros::Rate loop_rate(1); //1 sec
+    rclcpp::Rate loop_rate(1); //1 sec
     
     for (j=teamsize-1; j>=0; j--){
         
@@ -79,7 +79,7 @@
 
         //we'll send a goal to the robot to move 1 meter forward
         goal.target_pose.header.frame_id = "/map";
-        goal.target_pose.header.stamp = ros::Time::now();
+        goal.target_pose.header.stamp = rclcpp::Time::now();
         goal.target_pose.pose.position.x = starting_patrol_pos_x[j];
         goal.target_pose.pose.position.y = starting_patrol_pos_y[j];
         goal.target_pose.pose.orientation = angle_quat; //doesn't matter really.
@@ -100,11 +100,11 @@
     
     ROS_INFO("Let's make sure that all robots reach their goals...!");
 
-    last_cmd_vel_time = ros::Time::now().toSec();   //safe initialization
-    double current_time = ros::Time::now().toSec();
+    last_cmd_vel_time = rclcpp::Time::now().toSec();   //safe initialization
+    double current_time = rclcpp::Time::now().toSec();
     
     while( current_time-last_cmd_vel_time < 5.0 ){ //check cmd_vels not received in the last 5 secs
-        current_time = ros::Time::now().toSec();
+        current_time = rclcpp::Time::now().toSec();
         ros::spinOnce();
         loop_rate.sleep();
     }

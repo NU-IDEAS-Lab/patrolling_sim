@@ -140,7 +140,7 @@ void SEBS_Agent::processEvents() {
         //ROS_INFO("Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
 
         //Update Idleness Table:
-        double now = ros::Time::now().toSec();
+        double now = rclcpp::Time::now().toSec();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){

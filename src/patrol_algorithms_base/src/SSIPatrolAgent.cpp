@@ -163,7 +163,7 @@ void SSIPatrolAgent::init(int argc, char** argv) {
     }
     nactivetasks=0;
 
-    last_update_idl = ros::Time::now().toSec();
+    last_update_idl = rclcpp::Time::now().toSec();
 
     first_vertex = true;	
 
@@ -294,7 +294,7 @@ double SSIPatrolAgent::utility(int cv,int nv) {
 
 void SSIPatrolAgent::update_global_idleness() 
 {   
-    double now = ros::Time::now().toSec();
+    double now = rclcpp::Time::now().toSec();
     
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
@@ -472,7 +472,7 @@ int SSIPatrolAgent::compute_next_vertex(int cv) {
     force_bid(mnv,bidvalue,value); 
     send_target(mnv,bidvalue);
 #if DEBUG_PRINT    
-    printf("DTAP [%.1f] compute_next_vertex: waiting for bids\n",ros::Time::now().toSec());
+    printf("DTAP [%.1f] compute_next_vertex: waiting for bids\n",rclcpp::Time::now().toSec());
 #endif
     wait();
 #if DEBUG_PRINT    
@@ -557,7 +557,7 @@ void SSIPatrolAgent::send_target(int nv,double bv) {
         msg.data.push_back(nv);
 #if DEBUG_PRINT
         printf("DTAP [%.1f]  ** sending Task Request [robot:%d, msgtype:%d, next_vertex:%d, bid:%.2f ] \n",
-		ros::Time::now().toSec(),value,msg_type,nv,bv);
+		rclcpp::Time::now().toSec(),value,msg_type,nv,bv);
 #endif
         int ibv = (int)(bv);
         if (ibv>32767) { // Int16 is used to send messages
@@ -693,7 +693,7 @@ void SSIPatrolAgent::update_bids(int nv, double bv, int senderId){
 
 void SSIPatrolAgent::idleness_msg_handler(std::vector<int>::const_iterator it){
 
-    double now = ros::Time::now().toSec();
+    double now = rclcpp::Time::now().toSec();
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
 		int ms = *it; it++; // received value
@@ -732,7 +732,7 @@ void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator i
 #if DEBUG_PRINT
 	printf("DTAP handling task request message form %d: [ vertex: %d, bid value: %.2f]\n",senderId,nv,bv);
 #endif
-        double now = ros::Time::now().toSec();
+        double now = rclcpp::Time::now().toSec();
 	taskRequests[nv] = now;
 	double my_bidValue = compute_bid(nv); 
 	update_bids(nv,bv,senderId);
@@ -744,7 +744,7 @@ void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator i
 void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator it, int senderId){
         int nv = *it; it++;
         double bv = *it; it++;
-        double now = ros::Time::now().toSec();
+        double now = rclcpp::Time::now().toSec();
 #if DEBUG_PRINT
 	printf("DTAP [%.1f] handling task request message form %d: [ vertex: %d, bid value: %.2f]\n",now,senderId,nv,bv);
 #endif
@@ -774,7 +774,7 @@ void SSIPatrolAgent::bid_msg_handler(std::vector<int>::const_iterator it, int se
 	int nv = *it; it++;
 	double bv = *it; it++;
 #if DEBUG_PRINT
-	printf("DTAP [%.1f] handling bid message from %d: [ vertex: %d, bid value: %.2f]\n",ros::Time::now().toSec(),senderId,nv,bv);
+	printf("DTAP [%.1f] handling bid message from %d: [ vertex: %d, bid value: %.2f]\n",rclcpp::Time::now().toSec(),senderId,nv,bv);
 #endif
 	update_bids(nv,bv,senderId);
 }

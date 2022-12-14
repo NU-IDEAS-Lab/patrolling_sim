@@ -191,7 +191,7 @@ void resultsCB(const std_msgs::msg::Int16MultiArray::ConstSharedPtr msg)
                 init_robots[id_robot] = true;
                 
                 //Patch D.Portugal (needed to support other simulators besides Stage):
-                double current_time = ros::Time::now().toSec();
+                double current_time = rclcpp::Time::now().toSec();
                 //initialize last_goal_reached:
                 set_last_goal_reached(id_robot,current_time);
                 
@@ -226,7 +226,7 @@ void resultsCB(const std_msgs::msg::Int16MultiArray::ConstSharedPtr msg)
                 initialize = false;
                     
                 //Clock Reset:
-                time_zero = ros::Time::now().toSec();
+                time_zero = rclcpp::Time::now().toSec();
                 last_report_time = time_zero; 
                                     
                 time (&real_time_zero);
@@ -517,7 +517,7 @@ bool check_dead_robots() {
 
     dolog("  check_dead_robots - begin");
 
-    double current_time = ros::Time::now().toSec();
+    double current_time = rclcpp::Time::now().toSec();
     bool r=false;
     for (size_t i=0; i<teamsize; i++) {
       double l = get_last_goal_reached(i);
@@ -547,7 +547,7 @@ void update_stats(int id_robot, int goal) {
 
     
 //   printf("last_visit [%d] = %.1f\n", goal, last_visit [goal]);
-     double current_time = ros::Time::now().toSec();
+     double current_time = rclcpp::Time::now().toSec();
 
     printf("Robot %d reached goal %d (current time: %.2f, alg: %s, nav: %s)\n", id_robot, goal, current_time, algorithm.c_str(), nav_mod.c_str());
             
@@ -779,7 +779,7 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
 
   double duration = 0.0, real_duration = 0.0;
   
-  ros::Rate loop_rate(30); //0.033 seconds or 30Hz
+  rclcpp::Rate loop_rate(30); //0.033 seconds or 30Hz
   
   nh.setParam("/simulation_running", "true");
   nh.setParam("/simulation_abort", "false");
@@ -791,7 +791,7 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
       ROS_WARN("/GotoStartPosSrv does not exist. Assuming robots are already at starting positions.");
   }
     
-  double current_time = ros::Time::now().toSec();
+  double current_time = rclcpp::Time::now().toSec();
   
     // read parameters
     if (! ros::param::get("/goal_reached_wait", goal_reached_wait)) {
@@ -832,7 +832,7 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
     if (!initialize){  //check if msg is goal or interference -> compute necessary results.
             
       // check time
-      double report_time = ros::Time::now().toSec();
+      double report_time = rclcpp::Time::now().toSec();
       
       // printf("### report time=%.1f  last_report_time=%.1f diff = %.1f\n",report_time, last_report_time, report_time - last_report_time);
       
@@ -979,7 +979,7 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
 
     } // if ! initialize  
     
-    current_time = ros::Time::now().toSec();
+    current_time = rclcpp::Time::now().toSec();
     ros::spinOnce();
     loop_rate.sleep();
 

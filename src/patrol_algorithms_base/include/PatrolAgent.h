@@ -38,26 +38,34 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
-#include <std_msgs/Int16MultiArray.h>
+// #include <ros/ros.h>
+// #include <move_base_msgs/MoveBaseAction.h>
+// #include <actionlib/client/simple_action_client.h>
+// #include <tf/transform_broadcaster.h>
+// #include <tf/transform_listener.h>
+// #include <nav_msgs/Odometry.h>
+// #include <std_msgs/Int16MultiArray.h>
 
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+// #include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
+#include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/int16_multi_array.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 
 #include "getgraph.h"
+#include "patrolling_sim_interfaces/message_types.h"
 
 #define NUM_MAX_ROBOTS 32
 #define INTERFERENCE_DISTANCE 2
 
-#include "message_types.h"
 
 typedef unsigned int uint;
-typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
-class PatrolAgent {
+class PatrolAgent : public rclcpp::Node {
 
 protected:
     
@@ -67,7 +75,8 @@ protected:
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
 
-    tf::TransformListener *listener;
+    // tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener *listener;
 
     std::string graph_file, mapname;
     uint dimension; // Graph Dimension
@@ -89,24 +98,27 @@ protected:
     std::string initial_positions;
     int aborted_count, resend_goal_count;
     
-    MoveBaseClient *ac; // action client for reaching target goals
+    using ActionNav2Pose = nav2_msgs::action::NavigateToPose;
+    using ActionGoalHandleNav2Pose = rclcpp_action::ClientGoalHandle<ActionNav2Pose>;
+    rclcpp_action::Client<ActionNav2Pose>::SharedPtr ac;
     
-    ros::Subscriber odom_sub, positions_sub;
-    ros::Publisher positions_pub;
-    ros::Subscriber results_sub;
-    ros::Publisher results_pub;
-    ros::Publisher cmd_vel_pub;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr positions_sub;
+    rclcpp::Subscription<std_msgs::msg::Int16MultiArray>::SharedPtr results_sub;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr positions_pub;
+    rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr results_pub;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
 
     
 public:
     
-    PatrolAgent() { 
-        listener=NULL;
-        next_vertex = -1;
-        initialize = true;
-        end_simulation = false;
-        ac = NULL;
-    }
+    // PatrolAgent() { 
+    //     listener=NULL;
+    //     next_vertex = -1;
+    //     initialize = true;
+    //     end_simulation = false;
+    //     ac = NULL;
+    // }
     
     virtual void init(int argc, char** argv);
     void ready();
@@ -117,14 +129,17 @@ public:
     virtual void run();
     
     void getRobotPose(int robotid, float &x, float &y, float &theta);
-    void odomCB(const nav_msgs::Odometry::ConstPtr& msg);
+    void odomCB(nav_msgs::msg::Odometry::ConstSharedPtr msg);
     
     void sendGoal(int next_vertex);
     void cancelGoal();
     
-    void goalDoneCallback(const actionlib::SimpleClientGoalState &state, const move_base_msgs::MoveBaseResultConstPtr &result);
-    void goalActiveCallback();
-    void goalFeedbackCallback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback);
+    // void goalDoneCallback(const actionlib::SimpleClientGoalState &state, const move_base_msgs::MoveBaseResultConstPtr &result);
+    void goalDoneCallback(const ActionGoalHandleNav2Pose::WrappedResult & result);
+    // void goalActiveCallback();
+    void goalActiveCallback(ActionGoalHandleNav2Pose::ConstSharedPtr goal_handle);
+    // void goalFeedbackCallback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback);
+    void goalFeedbackCallback(ActionGoalHandleNav2Pose::ConstSharedPtr, const std::shared_ptr<const ActionNav2Pose::Feedback> feedback);
 
     
     void send_goal_reached();
@@ -143,10 +158,10 @@ public:
     void receive_positions();
     virtual void send_results();  // when goal is completed
     virtual void receive_results();  // asynchronous call
-    void do_send_message(std_msgs::Int16MultiArray &msg);
+    void do_send_message(std_msgs::msg::Int16MultiArray::SharedPtr msg);
     void send_interference();
-    void positionsCB(const nav_msgs::Odometry::ConstPtr& msg);
-    void resultsCB(const std_msgs::Int16MultiArray::ConstPtr& msg);
+    void positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg);
+    void resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg);
     
     // Must be implemented by sub-classes
     virtual int compute_next_vertex() = 0;

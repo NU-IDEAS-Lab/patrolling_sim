@@ -38,7 +38,9 @@
 #include <ctime>
 #include <climits>
 #include <cmath>
-#include <ros/ros.h>
+#include <cstring>
+#include <algorithm>
+// #include <ros/ros.h>
 
 #include "getgraph.h"
 #include "algorithms.h"
@@ -1664,7 +1666,7 @@ bool caminho_apartir_vizinhos_unicos (vertex *vertex_web, int dimension, int *ca
 	
 	//se mesmo assim i_list <= 1 -> e pq todos os nos tem 2 ou + vizs...
 	if (i_list<=1){
-	  ROS_WARN("Impossible to compute longest path.\n");
+	  //GOECKNER//ROS_WARN("Impossible to compute longest path.\n");
 //	  printf("Nao existem nos so com 1 vizinho. Impossivel computar caminho +longo\n");
 	  return false;
 	}
@@ -2125,7 +2127,7 @@ bool computar_caminho_de_ida (vertex *vertex_web, int dimension, int *caminho_de
 				
 				if(j==i_desvio-1){
 //				  printf("ERRO: nao houve atribuicao de prox_no e no_ant\n");
-				  ROS_WARN("Error: There was no atribution of previous and next vertex.\n");
+				  //GOECKNER//ROS_WARN("Error: There was no atribution of previous and next vertex.\n");
 				}
 			  }			  
 			  
@@ -2600,10 +2602,10 @@ uint get_MSP_dimension (const char* msp_file) {
 	uint dimension;
 	
 	if(file == NULL){
-		ROS_INFO("Can not open filename %s", msp_file);
-		ROS_BREAK();	
+		//GOECKNER//ROS_INFO("Can not open filename %s", msp_file);
+		//GOECKNER//ROS_BREAK();	
 	}else{
-		ROS_INFO("MSP Route File Opened. Reading Dimensions.\n");
+		//GOECKNER//ROS_INFO("MSP Route File Opened. Reading Dimensions.\n");
 		fscanf (file, "%u", &dimension);
 	}
 	fclose(file);
@@ -2616,10 +2618,10 @@ void get_MSP_route (uint *route, uint dimension, const char* msp_file) {
    file = fopen (msp_file,"r");
    
    if(file == NULL){
-      ROS_INFO("Can not open filename %s", msp_file);
-      ROS_BREAK();	
+      //GOECKNER//ROS_INFO("Can not open filename %s", msp_file);
+      //GOECKNER//ROS_BREAK();	
    }else{
-      ROS_INFO("MSP Route File Opened. Getting MSP Route.\n");
+      //GOECKNER//ROS_INFO("MSP Route File Opened. Getting MSP Route.\n");
       
       uint i;
       float temp;
@@ -2905,7 +2907,7 @@ void update_likelihood_old (reinforcement_learning RL, double *real_histogram, d
   if (node_min == node_max){ //check idleness effect:
     
     double idleness_new [RL.num_possible_neighs];
-    double add_time = ros::Time::now().toSec() - (RL.time_then);
+    double add_time = rclcpp::Time::now().toSec() - (RL.time_then);
     
     //double idleness_old_current = 0.0;
     //double idleness_new_current = add_time;
@@ -2949,7 +2951,7 @@ void update_likelihood_old (reinforcement_learning RL, double *real_histogram, d
   int hist_idx_next_vertex = get_hist_idx_from_edge_cost (hist_sort, size_hist, edge_cost);
   //ROS_INFO("hist_idx_next_vertex = %d",hist_idx_next_vertex);
   
-  ROS_INFO("Punish/Reward: %f", ((double)SIGN)*(1.0 - RL.entropy) );
+  //GOECKNER//ROS_INFO("Punish/Reward: %f", ((double)SIGN)*(1.0 - RL.entropy) );
   
   //ROS_INFO("Before: real_histogram [hist_idx_next_vertex] = %f", real_histogram [hist_idx_next_vertex]);
   
@@ -2985,10 +2987,10 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
  
   int id_next_vertex = pertence_uint_idx (RL.next_vertex, RL.id_neighbors, RL.num_possible_neighs);
   
-  ROS_INFO("id_next_vertex = %d", id_next_vertex);
+  //GOECKNER//ROS_INFO("id_next_vertex = %d", id_next_vertex);
   
   if (id_next_vertex<0){
-    ROS_WARN("Couldn't find id_next_vertex in update_likelihood()");
+    //GOECKNER//ROS_WARN("Couldn't find id_next_vertex in update_likelihood()");
     return;
   }
   
@@ -3016,20 +3018,20 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
     //  node_count_tab[i] = (double) RL.node_count[i] / (double) 2*vertex_web[ RL.id_neighbors[i] ].num_neigh;
     //}
     
-    ROS_INFO("node_count (%d) = %d", RL.id_neighbors[i], RL.node_count[i] );
-    ROS_INFO("degree (%d) = %d", RL.id_neighbors[i], vertex_web[RL.id_neighbors[i]].num_neigh);
-    ROS_INFO("node_count_norm (%d) = %f",RL.id_neighbors[i], node_count_tab[i]);    
+    //GOECKNER//ROS_INFO("node_count (%d) = %d", RL.id_neighbors[i], RL.node_count[i] );
+    //GOECKNER//ROS_INFO("degree (%d) = %d", RL.id_neighbors[i], vertex_web[RL.id_neighbors[i]].num_neigh);
+    //GOECKNER//ROS_INFO("node_count_norm (%d) = %f",RL.id_neighbors[i], node_count_tab[i]);    
     
   }
   
   //uint node_max = get_max(RL.node_count, RL.num_possible_neighs);
   double node_max = get_max_dbl(node_count_tab, RL.num_possible_neighs);
-  ROS_INFO("node_max_norm = %f",node_max); 
+  //GOECKNER//ROS_INFO("node_max_norm = %f",node_max); 
 
   //ROS_INFO("node_max = %d", node_max);
   
   double node_min = get_min_dbl(node_count_tab, RL.num_possible_neighs);
-  ROS_INFO("node_min_norm = %f",node_min); 
+  //GOECKNER//ROS_INFO("node_min_norm = %f",node_min); 
   //ROS_INFO("node_min = %d", node_min);
   
   /*if (node_count == node_max && node_max > node_min){
@@ -3039,17 +3041,17 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
   if (node_count == node_max){ 
    SIGN = -5;
    strong_reward = -1.0;
-   ROS_INFO("STRONG PUNISHMENT!!! node_count = node_max, SIGN = %d",SIGN);
+   //GOECKNER//ROS_INFO("STRONG PUNISHMENT!!! node_count = node_max, SIGN = %d",SIGN);
   }
   
   if (node_count == node_min){
    SIGN = 1;
-   ROS_INFO("node_count = node_min, SIGN = %d",SIGN); 
+   //GOECKNER//ROS_INFO("node_count = node_min, SIGN = %d",SIGN); 
   }  
   
   if (node_min == node_max){
    SIGN = 0;   
-   ROS_INFO("node_max = node_min, SIGN = %d",SIGN);
+   //GOECKNER//ROS_INFO("node_max = node_min, SIGN = %d",SIGN);
    
   }else{
     
@@ -3057,17 +3059,17 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
    if (RL.node_count[id_next_vertex] > 0 && RL.node_count[id_next_vertex] == minimum_global_node_count){ 
      SIGN = 5;	/**Dimension this as a parameter (alfa) in the reward funcion **/
      strong_reward = 1.0;
-     ROS_INFO("node_count = minimum_global_node_count, SIGN = %d",SIGN);
-     ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
+     //GOECKNER//ROS_INFO("node_count = minimum_global_node_count, SIGN = %d",SIGN);
+     //GOECKNER//ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
    }   
     
    if(SIGN==0){
-     ROS_INFO("node_max > node_count >= node_min, SIGN = %d",SIGN);
+     //GOECKNER//ROS_INFO("node_max > node_count >= node_min, SIGN = %d",SIGN);
    }
   }
   
   //if(SIGN==5){
-  //  ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
+  //  //GOECKNER//ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
   //}
   
   if (SIGN==0){ //not the node with minimum node count: but it may have high instantaneous idleness
@@ -3081,13 +3083,13 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
       }
     }
     
-    ROS_INFO("max_idleness = %f", max_idleness);
-    ROS_INFO("idleness_old(v=%d) = %f", RL.next_vertex, RL.idleness_old[id_next_vertex]);
+    //GOECKNER//ROS_INFO("max_idleness = %f", max_idleness);
+    //GOECKNER//ROS_INFO("idleness_old(v=%d) = %f", RL.next_vertex, RL.idleness_old[id_next_vertex]);
     
     //doesn't have the highest idleness - bad decision: negative reward
     if (max_idleness > RL.idleness_old[id_next_vertex]){
      SIGN = -1; /**alfa = 100**/
-     ROS_INFO("V=%d Doesn't have the highest idleness - bad decision, SIGN = %d",RL.next_vertex, SIGN);
+     //GOECKNER//ROS_INFO("V=%d Doesn't have the highest idleness - bad decision, SIGN = %d",RL.next_vertex, SIGN);
      
     }/*else{ //se idleness do seleccionado for 2X maior q idleness do 2º maior (Reward+)
 
@@ -3097,14 +3099,14 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
 	if (max_idleness <= 2.0*RL.idleness_old[i]+0.001 ){ //tamos a comparar doubles...
 	  reward = false;
 	}
-	ROS_INFO("idleness_old(v=%d) = %f", RL.id_neighbors[i], RL.idleness_old[i]);
+	//GOECKNER//ROS_INFO("idleness_old(v=%d) = %f", RL.id_neighbors[i], RL.idleness_old[i]);
       }
       
       if (reward){
 	SIGN=1;
-	ROS_INFO("V=%d Has the highest idleness: Twice the 2nd one, SIGN = %d",RL.next_vertex,SIGN);
+	//GOECKNER//ROS_INFO("V=%d Has the highest idleness: Twice the 2nd one, SIGN = %d",RL.next_vertex,SIGN);
       }else{
-	ROS_INFO("V=%d Has the highest idleness: But NOT twice the 2nd one, SIGN = %d",RL.next_vertex,SIGN);
+	//GOECKNER//ROS_INFO("V=%d Has the highest idleness: But NOT twice the 2nd one, SIGN = %d",RL.next_vertex,SIGN);
       }
       
     }*/
@@ -3112,7 +3114,7 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
   }
   
   if (SIGN==0){
-    ROS_WARN("Punish/Reward: 0.0");
+    //GOECKNER//ROS_WARN("Punish/Reward: 0.0");
     //write_reward_evolution(0.0, robotid);
     return;
   }
@@ -3121,7 +3123,7 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
    /*if (node_min == node_max){ //check idleness effect:
     
     double idleness_new [RL.num_possible_neighs];
-    double add_time = ros::Time::now().toSec() - (RL.time_then);
+    double add_time = rclcpp::Time::now().toSec() - (RL.time_then);
     
     //double idleness_old_current = 0.0;
     //double idleness_new_current = add_time;
@@ -3178,8 +3180,8 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
   }
   
   //double reward_inc = ((double)SIGN*SCALE_FACTOR)*(RL.entropy);
-  ROS_WARN("Punish/Reward: %f", reward_inc );  
-  ROS_INFO("Before Update: real_histogram [hist_idx_next_vertex] = %f", real_histogram [hist_idx_next_vertex]);
+  //GOECKNER//ROS_WARN("Punish/Reward: %f", reward_inc );  
+  //GOECKNER//ROS_INFO("Before Update: real_histogram [hist_idx_next_vertex] = %f", real_histogram [hist_idx_next_vertex]);
   
   //Update histogram:
   real_histogram [hist_idx_next_vertex] += reward_inc;  
@@ -3199,7 +3201,7 @@ void update_likelihood (reinforcement_learning RL, double *real_histogram, uint 
     real_histogram [hist_idx_next_vertex] = 20.0;
   }  
   
-  ROS_INFO("After Update (and truncation): real_histogram [hist_idx_next_vertex] = %f", real_histogram [hist_idx_next_vertex]);
+  //GOECKNER//ROS_INFO("After Update (and truncation): real_histogram [hist_idx_next_vertex] = %f", real_histogram [hist_idx_next_vertex]);
     
 }
 
@@ -3284,13 +3286,13 @@ void update_likelihood_new (reinforcement_learning RL, uint *node_count_table, d
   //ROS_INFO("ocurr_min = %d", ocurr_min);
   
   /*for (i=0; i<ocurr_min; i++){
-    ROS_INFO("tab_idx_min[%d] = %d", i,tab_idx_min[i]);
+    //GOECKNER//ROS_INFO("tab_idx_min[%d] = %d", i,tab_idx_min[i]);
   }*/
   
   //ROS_INFO("ocurr_max = %d", ocurr_max);
   
   /*for (i=0; i<ocurr_max; i++){
-    ROS_INFO("tab_idx_max[%d] = %d", i,tab_idx_max[i]);
+    //GOECKNER//ROS_INFO("tab_idx_max[%d] = %d", i,tab_idx_max[i]);
   } */
   
    
@@ -3394,7 +3396,7 @@ void update_likelihood_new (reinforcement_learning RL, uint *node_count_table, d
   
   /*if (node_min == node_max){
     //TODOS SAO IGUAIS É PRECISO VER IDLENESS MAX E MIN
-    ROS_WARN ("node_min = node_max");
+    //GOECKNER//ROS_WARN ("node_min = node_max");
   }*/
   
   int hist_idx_next_vertex, vertex_index;
@@ -3436,8 +3438,8 @@ void update_likelihood_new (reinforcement_learning RL, uint *node_count_table, d
    /*if (RL.node_count[id_next_vertex] > 0 && RL.node_count[id_next_vertex] == minimum_global_node_count){ 
      SIGN = 5;	//Dimension this as a parameter (alfa) in the reward funcion
      strong_reward = 1.0;
-     ROS_INFO("node_count = minimum_global_node_count, SIGN = %d",SIGN);
-     ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
+     //GOECKNER//ROS_INFO("node_count = minimum_global_node_count, SIGN = %d",SIGN);
+     //GOECKNER//ROS_WARN("STRONG REWARD!!!!!!!!!!! Vertex with minimum global node count"); 
    } */  
 
 }
@@ -3604,19 +3606,19 @@ int learning_algorithm(uint current_vertex, vertex *vertex_web, double *instanta
 	
 	/*double edge_cost = get_edge_cost_between (vertex_web, current_vertex, neighbors[i]);
 	if (edge_cost < 0.0){
-	  ROS_ERROR("learning_algorithm(): edge_cost = -1");
+	  //GOECKNER//ROS_ERROR("learning_algorithm(): edge_cost = -1");
 	  return -1;
 	}
 	
 	int idx_edge = get_hist_idx_from_edge_cost (hist_sort, number_of_edges, edge_cost);
 	if (idx_edge < 0) {
-	  ROS_ERROR("learning_algorithm(): idx_edge = -1");
+	  //GOECKNER//ROS_ERROR("learning_algorithm(): idx_edge = -1");
 	  return -1;
 	}*/
 	
 	int idx_edge = get_hist_idx (source, destination, current_vertex, neighbors[i], hist_dimension);
 	if (idx_edge < 0) {
-	  ROS_ERROR("learning_algorithm(): idx_edge = -1");
+	  //GOECKNER//ROS_ERROR("learning_algorithm(): idx_edge = -1");
 	  return -1;
 	}
 	
@@ -3720,7 +3722,7 @@ int learning_algorithm(uint current_vertex, vertex *vertex_web, double *instanta
       
     }
     
-    RL.time_then = ros::Time::now().toSec();
+    RL.time_then = rclcpp::Time::now().toSec();
     RL.next_vertex = next_vertex;    
     return next_vertex;
 

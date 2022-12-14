@@ -122,7 +122,7 @@ void CBLS_Agent::init(int argc, char** argv) {
   } 
   
   //INITIALIZE tables:
-  double time_zero = ros::Time::now().toSec();  
+  double time_zero = rclcpp::Time::now().toSec();  
 
   avg_idleness = new double[dimension];	//closed avg
   cur_avg_idleness = new double[dimension];	//avg + inst
@@ -149,7 +149,7 @@ void CBLS_Agent::onGoalComplete() {
       
     		/** PUNISH & REWARD -- BEFORE **/ 
 		//Update Idleness Table:
-		now = ros::Time::now().toSec();
+		now = rclcpp::Time::now().toSec();
 			
 		for(int i=0; i<dimension; i++){
 			if (i == next_vertex){
@@ -221,7 +221,7 @@ void CBLS_Agent::processEvents() {
         //ROS_INFO("Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
 
         //Update Idleness Table:
-        now = ros::Time::now().toSec();
+        now = rclcpp::Time::now().toSec();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){

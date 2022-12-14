@@ -120,7 +120,7 @@ void GBS_Agent::processEvents() {
     if (arrived && NUMBER_OF_ROBOTS>1){ //a different robot arrived at a vertex: update idleness table and keep track of last vertices positions of other robots.
 
         //Update Idleness Table:
-        double now = ros::Time::now().toSec();
+        double now = rclcpp::Time::now().toSec();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){
