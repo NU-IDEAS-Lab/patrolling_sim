@@ -18,7 +18,7 @@ rosidl_generate_interfaces(patrolling_sim_interfaces
 include_directories(include)
 
 install(
-  DIRECTORY include/${PROJECT_NAME}/
+  DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}/
 )
 

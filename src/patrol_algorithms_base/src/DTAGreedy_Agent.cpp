@@ -90,7 +90,7 @@ void DTAGreedy_Agent::init(int argc, char** argv) {
         global_instantaneous_idleness[i]=100;  // start with a high value    
     }
         
-    last_update_idl = ros::Time::now().toSec();
+    last_update_idl = rclcpp::Time::now().toSec();
     
     theta_idl = cf.getDParam("theta_idleness");
     theta_cost = cf.getDParam("theta_navigation");
@@ -145,7 +145,7 @@ double DTAGreedy_Agent::utility(int vertex) {
 
 void DTAGreedy_Agent::update_global_idleness() 
 {   
-    double now = ros::Time::now().toSec();
+    double now = rclcpp::Time::now().toSec();
     
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
@@ -225,7 +225,7 @@ void DTAGreedy_Agent::send_results() {
 void DTAGreedy_Agent::receive_results() {
     //result= [ID,msg_type,global_idleness[1..dimension],next_vertex]
     
-    double now = ros::Time::now().toSec();
+    double now = rclcpp::Time::now().toSec();
     
     //printf("  ** here ** \n");
     
