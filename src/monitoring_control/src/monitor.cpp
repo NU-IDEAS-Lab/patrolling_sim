@@ -45,20 +45,20 @@
 #include <iostream>
 #include <string>
 
-#include <ros/ros.h>
-#include <ros/package.h> //to get pkg path
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <std_msgs/msg/Int16MultiArray.h>
-#include <std_msgs/msg/String.h>
+#include <rclcpp/rclcpp.hpp>
+// #include <ros/package.h> //to get pkg path
+// #include <nav2_bt_navigator/action/MoveBaseAction.h>
+// #include <actionlib/client/simple_action_client.h>
+// #include <tf/transform_broadcaster.h>
+// #include <tf/transform_listener.h>
+#include <std_msgs/msg/int16_multi_array.hpp>
+#include <std_msgs/msg/string.hpp>
 
 using namespace std;
 
 #include "getgraph.h"
-#include "message_types.h"
-#include "patrolling_sim/srv/GoToStartPosSrv.h"
+#include "patrolling_sim_interfaces/message_types.h"
+#include "patrolling_sim_interfaces/srv/GoToStartPosSrv.h"
 
 #define NUM_MAX_ROBOTS 32
 #define DEAD_ROBOT_TIME 300.0 // (seconds) time from last goal reached after which a robot is considered dead
@@ -80,8 +80,8 @@ using std::endl;
 
 typedef unsigned int uint;
 
-ros::Subscriber results_sub;
-ros::Publisher results_pub, screenshot_pub;
+rclcpp::Subscription<std_msgs::msg::Int16MultiArray>::SharedPtr  results_sub;
+rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr results_pub, screenshot_pub;
 ros::ServiceServer GotoStartPosMethod;
 
 //Initialization:
@@ -165,7 +165,7 @@ void set_last_goal_reached(int k, double val)
 }
 
 
-void resultsCB(const std_msgs::Int16MultiArray::ConstPtr& msg) 
+void resultsCB(const std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
 {
     dolog("resultsCB - begin");
 
@@ -767,10 +767,11 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
   ros::NodeHandle nh;
   
   //Subscribe "results" from robots
-  results_sub = nh.subscribe("results", 100, resultsCB);   
+  results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("results", 100, resultsCB); 
   
   //Publish data to "results"
-  results_pub = nh.advertise<std_msgs::Int16MultiArray>("results", 100);
+  // results_pub = nh.advertise<std_msgs::Int16MultiArray>("results", 100);
+  results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("results", qos);
   
 #if EXTENDED_STAGE  
   screenshot_pub = nh.advertise<std_msgs::String>("/stageGUIRequest", 100);
