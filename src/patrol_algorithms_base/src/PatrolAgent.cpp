@@ -71,42 +71,34 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     
     srand ( time(NULL) );
 
-    this->declare_parameter("id_robot", 0);
+    auto param_desc_id_robot = rcl_interfaces::msg::ParameterDescriptor{};
+    // param_desc_id_robot.integer_range = {0, NUM_MAX_ROBOTS, 1}; //TODO
+    this->declare_parameter("id_robot", 0, param_desc_id_robot);
     this->declare_parameter("patrol_graph_file", "");
     this->declare_parameter("initial_pos.x", 0.0);
     this->declare_parameter("initial_pos.y", 0.0);
+    this->declare_parameter("goal_reached_wait", 3.0);
+    this->declare_parameter("communication_delay", 0.2);
+    this->declare_parameter("lost_message_rate", 0.0);
+    this->declare_parameter("agent_count", 1);
 
-
-    // TODOGOECKNER: This is a temporary location! These should really be in a parameter file.
-    this->declare_parameter("/goal_reached_wait", 3.0);
-    this->declare_parameter("/communication_delay", 0.2);
-    this->declare_parameter("/lost_message_rate", 0.0);
-    this->declare_parameter("/agent_count", 1);
-
-    
-    // //More than One robot (ID between 0 and 99)
-    // if ( atoi(argv[3])>NUM_MAX_ROBOTS || atoi(argv[3])<-1 ){
-    //     RCLCPP_INFO(this->get_logger(), "The Robot's ID must be an integer number between 0 an 99"); //max 100 robots 
-    //     return;
-    // }else{
-    //     ID_ROBOT = atoi(argv[3]); 
-    //     //printf("ID_ROBOT = %d\n",ID_ROBOT); //-1 for 1 robot without prefix (robot_0)
-    // }
     
     /** D.Portugal: needed in case you "rosrun" from another folder **/     
     // chdir(PS_path.c_str());
 
-    this->goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
-    this->communication_delay = this->get_parameter("/communication_delay").get_parameter_value().get<double>();
-    this->lost_message_rate = this->get_parameter("/lost_message_rate").get_parameter_value().get<double>();
-    this->agent_count = this->get_parameter("/agent_count").get_parameter_value().get<int>();
+    this->goal_reached_wait = this->get_parameter("goal_reached_wait").get_parameter_value().get<double>();
+    this->communication_delay = this->get_parameter("communication_delay").get_parameter_value().get<double>();
+    this->lost_message_rate = this->get_parameter("lost_message_rate").get_parameter_value().get<double>();
+    this->agent_count = this->get_parameter("agent_count").get_parameter_value().get<int>(); //TODO: Make this /control/agent_count
 
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
-                
+    
+    RCLCPP_INFO(this->get_logger(), "Starting patrol agent %d", this->ID_ROBOT);
+
     // mapname = string(argv[2]);
     // graph_file = "maps/"+mapname+"/"+mapname+".graph";
-    this->graph_file = this->get_parameter("patrol_graph_file").get_parameter_value().get<std::string>();
+    this->graph_file = this->get_parameter("patrol_graph_file").get_parameter_value().get<std::string>();  //TODO: Make this /control/patrol_graph_file
     
     //Check Graph Dimension:
     this->dimension = GetGraphDimension(graph_file.c_str());
@@ -271,6 +263,10 @@ void PatrolAgent::ready() {
     
     //wait for the action server to come up
     while(!this->ac->wait_for_action_server()){
+        if (!rclcpp::ok())
+        {
+            return;
+        }
         RCLCPP_INFO(this->get_logger(), "Waiting for the nav2 action server to come up");
     } 
     RCLCPP_INFO(this->get_logger(), "Connected with nav2 action server");    

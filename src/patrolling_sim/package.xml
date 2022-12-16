@@ -1,24 +1,21 @@
-<?xml version="2.0"?>
-<package>
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>patrolling_sim</name>
   <version>3.0.0</version>
   <description>Multi-Robot Patrolling Gazebo/ROS 2 Simulation Package.</description>
-
   <maintainer email="davidbsp@ingeniarius.pt">David Portugal</maintainer>
   <maintainer email="iocchi@dis.uniroma1.it">Luca Iocchi</maintainer>
   <maintainer email="joao.castilho@isr.uc.pt">João Castilho</maintainer>
   <maintainer email="anthony.goeckner@northwestern.edu">Anthony Goeckner</maintainer>
-
   <license>BSD</license>
 
-  <buildtool_depend>rosidl_default_generators</buildtool_depend>
-  <buildtool_depend>catkin</buildtool_depend>
-  <!-- <depend>actionlib</depend> -->
-  <depend>nav2_msgs</depend>
-  <depend>rclcpp</depend>
-  <depend>tf2</depend>
-  <depend>stage_ros</depend>
-  <exec_depend>rosidl_default_runtime</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>simulation_base</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

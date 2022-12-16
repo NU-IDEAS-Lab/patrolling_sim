@@ -20,7 +20,7 @@ find_package(patrolling_sim_interfaces REQUIRED)
 include_directories(src include)
 
 # Temporarily hide all warnings.
-add_definitions(-w)
+# add_definitions(-w)
 
 ########################################
 # Add libraries.
