@@ -35,11 +35,10 @@
 * Author: David Portugal (2011-2014), and Luca Iocchi (2014-2016)
 *********************************************************************/
 
-// #include "rclcpp/rclcpp.hpp"
+#include <stdexcept>
+#include "rclcpp/rclcpp.hpp"
 
 #include "getgraph.h"
-
-// rclcpp::Logger logger;
 
 uint WIDTH_PX;
 uint HEIGHT_PX;
@@ -56,9 +55,10 @@ uint GetGraphDimension (const char* graph_file){
    uint dimension;
    
    if(file == NULL){
-      // RCLCPP_FATAL(logger, "Can not open filename %s", graph_file);
+      RCLCPP_FATAL(rclcpp::get_logger("rclcpp"), "Can not open filename %s", graph_file);
+      throw std::invalid_argument("Cannot open graph file.");
    }else{
-      // RCLCPP_INFO(logger, "Graph File Opened. Reading Dimensions.\n");
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Graph File Opened. Reading Dimensions.\n");
       fscanf (file, "%u", &dimension);
       
       //Initialize other dimension variables:
@@ -81,10 +81,10 @@ void GetGraphInfo (vertex *vertex_web, uint dimension, const char* graph_file){
    file = fopen (graph_file,"r");
    
    if(file == NULL){
-      // RCLCPP_FATAL(logger, "Can not open filename %s", graph_file);
-      // ROS_BREAK();	
+      RCLCPP_FATAL(rclcpp::get_logger("rclcpp"), "Can not open filename %s", graph_file);
+      throw std::invalid_argument("Cannot open graph file.");
    }else{
-      // RCLCPP_INFO(logger, "Graph File Opened. Getting Graph Info.\n");
+      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Graph File Opened. Getting Graph Info.\n");
       
       uint i,j;
       float temp;
