@@ -70,7 +70,7 @@ class PatrolAgent : public rclcpp::Node {
 
 protected:
     
-    int TEAMSIZE;
+    int agent_count;
     int ID_ROBOT;
 
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)

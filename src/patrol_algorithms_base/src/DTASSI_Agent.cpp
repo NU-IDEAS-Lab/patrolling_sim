@@ -45,16 +45,16 @@ class DTASSI_Agent: public SSIPatrolAgent {
 
 public:
 
-    DTASSI_Agent(){}   	
+    DTASSI_Agent() : SSIPatrolAgent() {}   	
 
 };
 
 
 int main(int argc, char** argv) {
   
-    DTASSI_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<DTASSI_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

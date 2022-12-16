@@ -38,13 +38,6 @@
 #include <sstream>
 #include <string>
 #include <pthread.h>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
-#include <std_msgs/Int16MultiArray.h>
 
 #include "PatrolAgent.h"
 #include "algorithms.h"
@@ -62,13 +55,7 @@ private:
     pthread_mutex_t lock;
     
 public:
-    DTAGreedy_Agent() : cf(CONFIG_FILENAME)
-    {   // lock = PTHREAD_MUTEX_INITIALIZER; 
-        pthread_mutex_init(&lock, NULL);
-        
-    }
-    
-    virtual void init(int argc, char** argv);
+    DTAGreedy_Agent();
     virtual int compute_next_vertex();
     virtual void send_results();
     virtual void receive_results();    
@@ -79,18 +66,18 @@ public:
     void update_global_idleness();
 };
 
-void DTAGreedy_Agent::init(int argc, char** argv) {
-    
+DTAGreedy_Agent::DTAGreedy_Agent() : PatrolAgent(),  cf(CONFIG_FILENAME) {
+
+    pthread_mutex_init(&lock, NULL);
+
     printf("DTAGreedy_Agent::init\n");
-    
-    PatrolAgent::init(argc,argv);
-  
+      
     global_instantaneous_idleness = new double[dimension];
     for(size_t i=0; i<dimension; i++) {
         global_instantaneous_idleness[i]=100;  // start with a high value    
     }
         
-    last_update_idl = rclcpp::Time::now().toSec();
+    last_update_idl = this->get_clock()->now().seconds();
     
     theta_idl = cf.getDParam("theta_idleness");
     theta_cost = cf.getDParam("theta_navigation");
@@ -99,12 +86,13 @@ void DTAGreedy_Agent::init(int argc, char** argv) {
     std::stringstream paramss;
     paramss << theta_idl << "," << theta_cost << "," << theta_odist;
 
-    ros::param::set("/algorithm_params",paramss.str());
+    // ros::param::set("/algorithm_params",paramss.str());
+    this->declare_parameter("/algorithm_params", paramss.str());
 
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     getRobotPose(value,origin_x, origin_y, origin_theta);
-    ROS_INFO("Robot %d: Initial pose %.1f %.1f %.1f",value,origin_x, origin_y, origin_theta);
+    RCLCPP_INFO(this->get_logger(), "Robot %d: Initial pose %.1f %.1f %.1f",value,origin_x, origin_y, origin_theta);
     
 }
 
@@ -145,7 +133,7 @@ double DTAGreedy_Agent::utility(int vertex) {
 
 void DTAGreedy_Agent::update_global_idleness() 
 {   
-    double now = rclcpp::Time::now().toSec();
+    double now = this->get_clock()->now().seconds();
     
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
@@ -193,10 +181,10 @@ void DTAGreedy_Agent::send_results() {
     
     //result= [ID,msg_type,global_idleness[1..dimension],next_vertex]
     int msg_type = DTAGREEDY_MSG_TYPE;
-    std_msgs::Int16MultiArray msg;
-    msg.data.clear();
-    msg.data.push_back(value);
-    msg.data.push_back(msg_type);
+    auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();
+    msg->data.clear();
+    msg->data.push_back(value);
+    msg->data.push_back(msg_type);
     //printf("  ** sending [%d, %d, ",ID_ROBOT,msg_type);
     
     pthread_mutex_lock(&lock);
@@ -205,15 +193,15 @@ void DTAGreedy_Agent::send_results() {
         // convert in 1/10 of secs (integer value) Max value 3276.8 second (> 50 minutes) !!!
         int ms = (int)(global_instantaneous_idleness[i]*10);
         if (ms>32768) { // Int16 is used to send messages
-            ROS_WARN("Wrong conversion when sending idleness value in messages!!!");
+            RCLCPP_WARN(this->get_logger(), "Wrong conversion when sending idleness value in messages!!!");
             ms=32000;
         }
         if ((int)i==next_vertex) ms=0;
         // printf("  ** sending GII[%lu] = %d from value %.2f \n",i,ms,global_instantaneous_idleness[i]);
         //printf("%d, ",ms);
-        msg.data.push_back(ms);
+        msg->data.push_back(ms);
     }
-    msg.data.push_back(next_vertex);
+    msg->data.push_back(next_vertex);
     //printf(",%d]\n",next_vertex);
     pthread_mutex_unlock(&lock);
     
@@ -225,7 +213,7 @@ void DTAGreedy_Agent::send_results() {
 void DTAGreedy_Agent::receive_results() {
     //result= [ID,msg_type,global_idleness[1..dimension],next_vertex]
     
-    double now = rclcpp::Time::now().toSec();
+    double now = this->get_clock()->now().seconds();
     
     //printf("  ** here ** \n");
     
@@ -263,8 +251,8 @@ void DTAGreedy_Agent::receive_results() {
     
     // interrupt path if moving to the same target node
     if (sender_next_vertex == next_vertex) { // two robots are going to the same node
-        ROS_INFO("Robots %d and %d are both going to vertex %d",value,id_sender,next_vertex);
-        ROS_INFO("Robot %d: STOP and choose another target",value);
+        RCLCPP_INFO(this->get_logger(), "Robots %d and %d are both going to vertex %d",value,id_sender,next_vertex);
+        RCLCPP_INFO(this->get_logger(), "Robot %d: STOP and choose another target",value);
         // change my destination
         cancelGoal(); // stop the current behavior
         current_vertex = next_vertex; // simulate that the goal vertex has been reached (not sent to the monitor)
@@ -276,9 +264,9 @@ void DTAGreedy_Agent::receive_results() {
 
 int main(int argc, char** argv) {
   
-    DTAGreedy_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<DTAGreedy_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

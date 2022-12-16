@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 
@@ -104,7 +98,7 @@ int Conscientious_Reactive_Agent::compute_next_vertex() {
         next_vertex = vertex_web[current_vertex].id_neigh[0]; //only one possibility
     }
   
-    ROS_INFO("Conscientious_Reactive choice: %d",next_vertex);
+    RCLCPP_INFO(this->get_logger(), "Conscientious_Reactive choice: %d",next_vertex);
     return next_vertex;
 }
 
@@ -121,9 +115,9 @@ void Conscientious_Reactive_Agent::receive_results() {
 
 int main(int argc, char** argv) {
   
-    Conscientious_Reactive_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<Conscientious_Reactive_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

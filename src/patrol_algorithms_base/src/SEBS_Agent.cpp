@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 #include "getgraph.h"
@@ -66,7 +60,7 @@ private:
   int robot_intention;  
       
 public:
-    virtual void init(int argc, char** argv);
+    SEBS_Agent();
     virtual int compute_next_vertex();
     virtual void processEvents();
     virtual void send_results();
@@ -74,11 +68,8 @@ public:
 };
 
 
-void SEBS_Agent::init(int argc, char** argv) {
-  
-  PatrolAgent::init(argc,argv);
-  
-  NUMBER_OF_ROBOTS = atoi(argv[3]);
+SEBS_Agent::SEBS_Agent() : PatrolAgent() {
+  NUMBER_OF_ROBOTS = this->agent_count;
   arrived=false;
   intention=false;
   
@@ -121,7 +112,8 @@ void SEBS_Agent::init(int argc, char** argv) {
     std::stringstream paramss;
     paramss << G1 << "," << G2;
 
-    ros::param::set("/algorithm_params",paramss.str());
+    // ros::param::set("/algorithm_params",paramss.str());
+    this->declare_parameter("/algorithm_params", paramss.str());
 
     
   //INITIALIZE tab_intention:
@@ -137,10 +129,10 @@ void SEBS_Agent::processEvents() {
     
     if (arrived && NUMBER_OF_ROBOTS>1){ //a different robot arrived at a vertex: update idleness table and keep track of last vertices positions of other robots.
 
-        //ROS_INFO("Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
+        //RCLCPP_INFO(this->get_logger(), "Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
 
         //Update Idleness Table:
-        double now = rclcpp::Time::now().toSec();
+        double now = this->get_clock()->now().seconds();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){
@@ -149,7 +141,7 @@ void SEBS_Agent::processEvents() {
             }           
             //actualizar instantaneous_idleness[dimension]
             instantaneous_idleness[i] = now - last_visit[i];      
-	    //ROS_INFO("idleness[%d] = %f", i, instantaneous_idleness[i]);
+	    //RCLCPP_INFO(this->get_logger(), "idleness[%d] = %f", i, instantaneous_idleness[i]);
         }     
         
         arrived = false;
@@ -172,12 +164,12 @@ void SEBS_Agent::send_results() {
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     // [ID,msg_type,vertex,intention]
-    std_msgs::Int16MultiArray msg;   
-    msg.data.clear();
-    msg.data.push_back(value);
-    msg.data.push_back(SEBS_MSG_TYPE);
-    msg.data.push_back(current_vertex);
-    msg.data.push_back(next_vertex);    
+    auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();   
+    msg->data.clear();
+    msg->data.push_back(value);
+    msg->data.push_back(SEBS_MSG_TYPE);
+    msg->data.push_back(current_vertex);
+    msg->data.push_back(next_vertex);    
     do_send_message(msg);
 }
 
@@ -203,9 +195,9 @@ void SEBS_Agent::receive_results() {
 
 int main(int argc, char** argv) {
 
-    SEBS_Agent agent;
-    agent.init(argc,argv);    
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<SEBS_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }
