@@ -48,7 +48,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-// #include "tf2_ros/buffer.h"
+#include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
 #include "geometry_msgs/msg/twist.hpp"
@@ -75,8 +75,8 @@ protected:
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
 
-    // tf2_ros::Buffer tfBuffer;
-    tf2_ros::TransformListener *listener;
+    std::unique_ptr<tf2_ros::Buffer> tfBuffer;
+    std::shared_ptr<tf2_ros::TransformListener> listener{nullptr};
 
     std::string graph_file, mapname;
     uint dimension; // Graph Dimension
@@ -120,7 +120,7 @@ public:
     //     ac = NULL;
     // }
     
-    virtual void init(int argc, char** argv);
+    PatrolAgent();
     void ready();
     void initialize_node();
     void readParams(); // read ROS parameters

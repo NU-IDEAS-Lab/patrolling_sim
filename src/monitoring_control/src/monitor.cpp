@@ -825,7 +825,7 @@ int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
 
 
 
-  while( ros::ok() ){
+  while( rclcpp::ok() ){
     
     dolog("main loop - begin");
 
