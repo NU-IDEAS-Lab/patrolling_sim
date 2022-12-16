@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -26,12 +27,11 @@ add_definitions(-w)
 
 add_library(PatrolAgent
   src/PatrolAgent.cpp
-  # TEMPORARILY REMOVED
-  # src/getgraph.cpp
-  # src/algorithms.cpp
-  # src/config.cpp
+  src/getgraph.cpp
+  src/algorithms.cpp
+  src/config.cpp
 )
-ament_target_dependencies(PatrolAgent rclcpp tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
+ament_target_dependencies(PatrolAgent rclcpp tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
 
 # add_library(SSIPatrolAgent
 #   src/SSIPatrolAgent.cpp
@@ -66,8 +66,8 @@ ament_target_dependencies(PatrolAgent rclcpp tf2_ros geometry_msgs std_msgs nav_
 # add_executable(CBLS src/CBLS_Agent.cpp)
 # target_link_libraries(CBLS PatrolAgent)
 
-# add_executable(Random src/Random_Agent.cpp)
-# target_link_libraries(Random PatrolAgent)
+add_executable(Random src/Random_Agent.cpp)
+target_link_libraries(Random PatrolAgent)
 
 # add_executable(DTAGreedy src/DTAGreedy_Agent.cpp)
 # target_link_libraries(DTAGreedy PatrolAgent)
