@@ -1,0 +1,12 @@
+/**/patrol_agent:
+  ros__parameters:
+    # Generic PatrolAgent parameters.
+    goal_reached_wait: 3.0
+    communication_delay: 0.2
+    lost_message_rate: 0.0
+
+    # MSP-specific parameters.
+    msp_file: ""
+
+    # TESTING ONLY
+    patrol_graph_file: /home/anthony/idev/patrolling_sim/src/patrolling_sim/maps/DIAG_labs/DIAG_labs.graph
