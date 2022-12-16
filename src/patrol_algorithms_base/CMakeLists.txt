@@ -79,6 +79,13 @@ target_link_libraries(Random PatrolAgent)
 # target_link_libraries(DTASSIPart PatrolAgent SSIPatrolAgent)
 
 
+# Install executables.
+install(
+  TARGETS
+    Random
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # Install libraries.
 # ament_export_targets(my_libraryTargets HAS_LIBRARY_TARGET)
 # ament_export_dependencies(some_dependency)
@@ -87,7 +94,9 @@ install(
   DESTINATION include
 )
 install(
-  TARGETS PatrolAgent #SSIPatrolAgent
+  TARGETS
+    PatrolAgent
+    #SSIPatrolAgent
   # EXPORT my_libraryTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

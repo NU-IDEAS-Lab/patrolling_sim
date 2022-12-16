@@ -125,7 +125,6 @@ public:
     PatrolAgent();
     void ready();
     void initialize_node();
-    void readParams(); // read ROS parameters
     void update_idleness();  // local idleness
     
     virtual void run_once();

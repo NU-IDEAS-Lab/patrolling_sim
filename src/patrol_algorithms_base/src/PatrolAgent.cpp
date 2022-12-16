@@ -75,6 +75,13 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->declare_parameter("patrol_graph_file", "");
     this->declare_parameter("initial_pos.x", 0.0);
     this->declare_parameter("initial_pos.y", 0.0);
+
+
+    // TODOGOECKNER: This is a temporary location! These should really be in a parameter file.
+    this->declare_parameter("/goal_reached_wait", 3.0);
+    this->declare_parameter("/communication_delay", 0.2);
+    this->declare_parameter("/lost_message_rate", 0.0);
+
     
     // //More than One robot (ID between 0 and 99)
     // if ( atoi(argv[3])>NUM_MAX_ROBOTS || atoi(argv[3])<-1 ){
@@ -87,6 +94,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     
     /** D.Portugal: needed in case you "rosrun" from another folder **/     
     // chdir(PS_path.c_str());
+
+    this->goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
+    this->communication_delay = this->get_parameter("/communication_delay").get_parameter_value().get<double>();
+    this->lost_message_rate = this->get_parameter("/lost_message_rate").get_parameter_value().get<double>();
+
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
                 
@@ -230,8 +242,6 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     // last time comm delay has been applied
     last_communication_delay_time = this->get_clock()->now().seconds();   
 
-    readParams();
-
     // Wait for ready.
     ready();
 
@@ -274,14 +284,6 @@ void PatrolAgent::ready() {
     }    
 
 }
-
-void PatrolAgent::readParams() {
-
-    this->goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
-    this->communication_delay = this->get_parameter("/communication_delay").get_parameter_value().get<double>();
-    this->lost_message_rate = this->get_parameter("/lost_message_rate").get_parameter_value().get<double>();
-}
-
 
 void PatrolAgent::run_once() {
     /* Run Algorithm */     
