@@ -81,6 +81,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->declare_parameter("/goal_reached_wait", 3.0);
     this->declare_parameter("/communication_delay", 0.2);
     this->declare_parameter("/lost_message_rate", 0.0);
+    this->declare_parameter("/agent_count", 1);
 
     
     // //More than One robot (ID between 0 and 99)
@@ -98,6 +99,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
     this->communication_delay = this->get_parameter("/communication_delay").get_parameter_value().get<double>();
     this->lost_message_rate = this->get_parameter("/lost_message_rate").get_parameter_value().get<double>();
+    this->agent_count = this->get_parameter("/agent_count").get_parameter_value().get<int>();
 
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
@@ -149,7 +151,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
 
     // // wait a random time (avoid conflicts with other robots starting at the same time...)
     // double r = 3.0 * ((rand() % 1000)/1000.0);
-    // ros::Duration wait(r); // seconds
+    // rclcpp::Duration wait(r); // seconds
     // wait.sleep();
     
     // double initial_x, initial_y;
@@ -204,11 +206,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     // if(ID_ROBOT==-1){ 
     //     strcpy (string1,"odom"); //string = "odom"
     //     strcpy (string2,"cmd_vel"); //string = "cmd_vel"
-    //     TEAMSIZE = 1;
+    //     this->agent_count = 1;
     // }else{ 
     //     sprintf(string1,"robot_%d/odom",ID_ROBOT);
     //     sprintf(string2,"robot_%d/cmd_vel",ID_ROBOT);
-    //     TEAMSIZE = ID_ROBOT + 1;
+    //     this->agent_count = ID_ROBOT + 1;
     // }   
 
     /* Set up listener for global coordinates of robots */
@@ -468,7 +470,7 @@ void PatrolAgent::getRobotPose(int robotid, float &x, float &y, float &theta) {
     geometry_msgs::msg::TransformStamped transform;
 
     try {
-        // listener->waitForTransform(sframe, dframe, rclcpp::Time(0), ros::Duration(3));
+        // listener->waitForTransform(sframe, dframe, rclcpp::Time(0), rclcpp::Duration(3));
         // listener->lookupTransform(sframe, dframe, rclcpp::Time(0), transform);
         transform = this->tfBuffer->lookupTransform(
             dframe,
@@ -629,7 +631,7 @@ bool PatrolAgent::check_interference (int robot_id){ //verificar se os robots es
     if (this->get_clock()->now().seconds()-last_interference<10)  // seconds
         return false; // false if within 10 seconds from the last one
     
-    /* Poderei usar TEAMSIZE para afinar */
+    /* Poderei usar this->agent_count para afinar */
     for (i=0; i<robot_id; i++){ //percorrer vizinhos (assim asseguro q cada interferencia é so encontrada 1 vez)
         
         dist_quad = (xPos[i] - xPos[robot_id])*(xPos[i] - xPos[robot_id]) + (yPos[i] - yPos[robot_id])*(yPos[i] - yPos[robot_id]);
@@ -779,9 +781,9 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
         int idx = atoi (str_idx);
     //  printf("id robot q mandou msg = %d\n",idx);
         
-        // if (idx >= TEAMSIZE && TEAMSIZE <= NUM_MAX_ROBOTS){
-        //     //update teamsize:
-        //     TEAMSIZE = idx+1;
+        // if (idx >= this->agent_count && this->agent_count <= NUM_MAX_ROBOTS){
+        //     //update this->agent_count:
+        //     this->agent_count = idx+1;
         // }
         
         if (ID_ROBOT != idx){  //Ignore own positions   
@@ -885,7 +887,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
                     double current_time = this->get_clock()->now().seconds();
                     if (current_time-last_communication_delay_time>1.0) { 
                             RCLCPP_INFO(this->get_logger(), "Communication delay %.1f",communication_delay);
-                            ros::Duration delay(communication_delay); // seconds
+                            rclcpp::Duration delay(communication_delay); // seconds
                             delay.sleep();
                             last_communication_delay_time = current_time;
                 }

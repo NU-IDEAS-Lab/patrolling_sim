@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 #include "algorithms.h"
@@ -52,16 +46,13 @@ private:
     int path_elements;
     int i_vertex;
 public:
-    virtual void init(int argc, char** argv);
+    Cyclic_Agent();
     virtual int compute_next_vertex();
     //virtual void send_results();
     //virtual void receive_results();    
 };
 
-void Cyclic_Agent::init(int argc, char** argv) {
-    
-    PatrolAgent::init(argc,argv);
-    
+Cyclic_Agent::Cyclic_Agent() : PatrolAgent() {    
     //robot's cyclic path:
     path = new int[8*dimension];
   
@@ -102,9 +93,9 @@ void Cyclic_Agent::receive_results() {
 
 int main(int argc, char** argv) {
   
-    Cyclic_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<Cyclic_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

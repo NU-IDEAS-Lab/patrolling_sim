@@ -37,13 +37,6 @@
 
 #include <sstream>
 #include <string>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
-#include <std_msgs/Int16MultiArray.h>
 #include <algorithm>
 #include <stdio.h>
 
@@ -192,7 +185,6 @@ public:
 
     SSIPatrolAgent();
 
-    virtual void init(int argc, char** argv);
 	virtual void onGoalComplete();    
     virtual int compute_next_vertex();
     virtual void send_results();

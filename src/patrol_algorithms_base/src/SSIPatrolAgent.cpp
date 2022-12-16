@@ -39,12 +39,6 @@
 
 using namespace std;
 
-SSIPatrolAgent::SSIPatrolAgent() : cf(CONFIG_FILENAME)
-{
-    pthread_mutex_init(&lock, NULL);
-}
-    
-
 void SSIPatrolAgent::onGoalComplete()
 {
     printf("DTAP onGoalComplete!!!\n");
@@ -77,7 +71,7 @@ void SSIPatrolAgent::onGoalComplete()
     send_results();  // Algorithm specific function
     
     //Send the goal to the robot (Global Map)
-    ROS_INFO("Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
+    RCLCPP_INFO(this->get_logger(), "Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
     //sendGoal(vertex_web[next_vertex].x, vertex_web[next_vertex].y);  
     sendGoal(next_vertex);  // send to move_base
 
@@ -140,9 +134,9 @@ bool SSIPatrolAgent::all_selected(bool* sv){
 }
 
 
-void SSIPatrolAgent::init(int argc, char** argv) {
+SSIPatrolAgent::SSIPatrolAgent() : PatrolAgent(), cf(CONFIG_FILENAME) {
         
-    PatrolAgent::init(argc,argv);
+    pthread_mutex_init(&lock, NULL);
 
     //initialize structures
     next_vertex = -1; 
@@ -163,7 +157,7 @@ void SSIPatrolAgent::init(int argc, char** argv) {
     }
     nactivetasks=0;
 
-    last_update_idl = rclcpp::Time::now().toSec();
+    last_update_idl = this->get_clock()->now().seconds();
 
     first_vertex = true;	
 
@@ -178,8 +172,8 @@ void SSIPatrolAgent::init(int argc, char** argv) {
     std::stringstream paramss;
     paramss << timeout << "," << theta_idl << "," << theta_cost << "," << theta_hop << "," << threshold << "," << hist;
 
-    ros::param::set("/algorithm_params",paramss.str());
-
+    // ros::param::set("/algorithm_params",paramss.str());
+    this->declare_parameter("/algorithm_params", paramss.str());
 }
 
 double SSIPatrolAgent::compute_cost(int vertex)
@@ -294,7 +288,7 @@ double SSIPatrolAgent::utility(int cv,int nv) {
 
 void SSIPatrolAgent::update_global_idleness() 
 {   
-    double now = rclcpp::Time::now().toSec();
+    double now = this->get_clock()->now().seconds();
     
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
@@ -432,13 +426,13 @@ void SSIPatrolAgent::wait(){
 #if DEBUG_PRINT
 	printf("   --- waiting %.1f second ---\n",t);
 #endif
-	ros::Duration delay = ros::Duration(t); //asynchronous version
-	delay.sleep();	
+	rclcpp::Duration delay = rclcpp::Duration::from_seconds(t); //asynchronous version
+	this->get_clock()->sleep_for(delay);	
 
 /*        double micro_timeout = timeout/ts; //synchronous version
 	for (int i=0;i<ts;i++){
 		// ros::spinOnce();
-	        ros::Duration delay = ros::Duration(micro_timeout);
+	        rclcpp::Duration delay = rclcpp::Duration(micro_timeout);
 	        delay.sleep();	
 	}
 */
@@ -472,7 +466,7 @@ int SSIPatrolAgent::compute_next_vertex(int cv) {
     force_bid(mnv,bidvalue,value); 
     send_target(mnv,bidvalue);
 #if DEBUG_PRINT    
-    printf("DTAP [%.1f] compute_next_vertex: waiting for bids\n",rclcpp::Time::now().toSec());
+    printf("DTAP [%.1f] compute_next_vertex: waiting for bids\n",this->get_clock()->now().seconds());
 #endif
     wait();
 #if DEBUG_PRINT    
@@ -549,22 +543,22 @@ void SSIPatrolAgent::send_target(int nv,double bv) {
         if (value==-1){value=0;}
     
     	int msg_type = DTASSI_TR;
-    	std_msgs::Int16MultiArray msg;
-    	msg.data.clear();
+    	auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();
+    	msg->data.clear();
 
-	msg.data.push_back(value);
-        msg.data.push_back(msg_type);
-        msg.data.push_back(nv);
+	    msg->data.push_back(value);
+        msg->data.push_back(msg_type);
+        msg->data.push_back(nv);
 #if DEBUG_PRINT
         printf("DTAP [%.1f]  ** sending Task Request [robot:%d, msgtype:%d, next_vertex:%d, bid:%.2f ] \n",
-		rclcpp::Time::now().toSec(),value,msg_type,nv,bv);
+		this->get_clock()->now().seconds(),value,msg_type,nv,bv);
 #endif
         int ibv = (int)(bv);
         if (ibv>32767) { // Int16 is used to send messages
-            ROS_WARN("Wrong conversion when sending bid value in messages!!!");
+            RCLCPP_WARN(this->get_logger(), "Wrong conversion when sending bid value in messages!!!");
             ibv=32000;
         }
-	msg.data.push_back(ibv);
+	msg->data.push_back(ibv);
     	
 	do_send_message(msg);   
     
@@ -577,21 +571,21 @@ void SSIPatrolAgent::send_bid(int nv,double bv) {
         
 	//msg format: [ID_ROBOT,msg_type,next_vertex_index,bid_value]
     	int msg_type = DTASSI_BID;
-    	std_msgs::Int16MultiArray msg;
-    	msg.data.clear();
+    	auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();
+    	msg->data.clear();
 
-	msg.data.push_back(value);
-        msg.data.push_back(msg_type);
-        msg.data.push_back(nv);
+	    msg->data.push_back(value);
+        msg->data.push_back(msg_type);
+        msg->data.push_back(nv);
 #if DEBUG_PRINT
     	printf("DTAP  ** sending Bid [robot:%d, msgtype:%d, next_vertex:%d, bid:%.2f ] \n",value,msg_type,nv,bv);
 #endif
         int ibv = (int)(bv);
         if (ibv>32767) { // Int16 is used to send messages
-            ROS_WARN("Wrong conversion when sending bid value in messages!!!");
+            RCLCPP_WARN(this->get_logger(), "Wrong conversion when sending bid value in messages!!!");
             ibv=32000;
         }
-        msg.data.push_back(ibv);
+        msg->data.push_back(ibv);
 	do_send_message(msg);   
 }
 
@@ -657,27 +651,27 @@ void SSIPatrolAgent::send_results() {
     
     //result= [ID,msg_type,global_idleness[1..dimension],next_vertex]
     int msg_type = DTAGREEDY_MSG_TYPE;
-    std_msgs::Int16MultiArray msg;
-    msg.data.clear();
-    msg.data.push_back(value);
-    msg.data.push_back(msg_type);
+    auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();
+    msg->data.clear();
+    msg->data.push_back(value);
+    msg->data.push_back(msg_type);
     // printf("  ** sending [%d, %d, ",ID_ROBOT,msg_type);
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
         // convert in 1/10 of secs (integer value) Max value 3276.8 second (> 50 minutes) !!!
         int ms = (int)(global_instantaneous_idleness[i]*10);
         if (ms>32767) { // Int16 is used to send messages
-            ROS_WARN("Wrong conversion when sending idleness value in messages!!!");
+            RCLCPP_WARN(this->get_logger(), "Wrong conversion when sending idleness value in messages!!!");
             printf("*** idleness value = %.1f -> int16 value = %d\n",global_instantaneous_idleness[i],ms);
             ms=32000;
         }
 //        if ((int)i==next_vertex) ms=0; //sending 0 for next vertex to avoid conflicts (useless for DTASSI) TODO:CHECK 
         //printf("  ** sending GII[%lu] = %d\n",i,ms);
         //printf("%d, ",ms);
-        msg.data.push_back(ms);
+        msg->data.push_back(ms);
     }
     pthread_mutex_unlock(&lock);
-    msg.data.push_back(next_vertex);
+    msg->data.push_back(next_vertex);
     //printf("%d]\n",next_vertex);
     
     do_send_message(msg);   
@@ -693,7 +687,7 @@ void SSIPatrolAgent::update_bids(int nv, double bv, int senderId){
 
 void SSIPatrolAgent::idleness_msg_handler(std::vector<int>::const_iterator it){
 
-    double now = rclcpp::Time::now().toSec();
+    double now = this->get_clock()->now().seconds();
     pthread_mutex_lock(&lock);
     for(size_t i=0; i<dimension; i++) {
 		int ms = *it; it++; // received value
@@ -714,8 +708,8 @@ void SSIPatrolAgent::idleness_msg_handler(std::vector<int>::const_iterator it){
 		    
 		    // interrupt path if moving to the same target node
 		    if (sender_next_vertex == next_vertex) { // two robots are going to the same node
-			ROS_INFO("Robots %d and %d are both going to vertex %d",ID_ROBOT,id_sender,next_vertex);
-			ROS_INFO("Robot %d: STOP and choose another target",ID_ROBOT);
+			RCLCPP_INFO(this->get_logger(), "Robots %d and %d are both going to vertex %d",ID_ROBOT,id_sender,next_vertex);
+			RCLCPP_INFO(this->get_logger(), "Robot %d: STOP and choose another target",ID_ROBOT);
 			// change my destination
 			cancelGoal(); // stop the current behavior
 			current_vertex = next_vertex; // simulate that the goal vertex has been reached (not sent to the monitor)
@@ -732,7 +726,7 @@ void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator i
 #if DEBUG_PRINT
 	printf("DTAP handling task request message form %d: [ vertex: %d, bid value: %.2f]\n",senderId,nv,bv);
 #endif
-        double now = rclcpp::Time::now().toSec();
+        double now = this->get_clock()->now().seconds();
 	taskRequests[nv] = now;
 	double my_bidValue = compute_bid(nv); 
 	update_bids(nv,bv,senderId);
@@ -744,7 +738,7 @@ void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator i
 void SSIPatrolAgent::task_request_msg_handler(std::vector<int>::const_iterator it, int senderId){
         int nv = *it; it++;
         double bv = *it; it++;
-        double now = rclcpp::Time::now().toSec();
+        double now = this->get_clock()->now().seconds();
 #if DEBUG_PRINT
 	printf("DTAP [%.1f] handling task request message form %d: [ vertex: %d, bid value: %.2f]\n",now,senderId,nv,bv);
 #endif
@@ -774,7 +768,7 @@ void SSIPatrolAgent::bid_msg_handler(std::vector<int>::const_iterator it, int se
 	int nv = *it; it++;
 	double bv = *it; it++;
 #if DEBUG_PRINT
-	printf("DTAP [%.1f] handling bid message from %d: [ vertex: %d, bid value: %.2f]\n",rclcpp::Time::now().toSec(),senderId,nv,bv);
+	printf("DTAP [%.1f] handling bid message from %d: [ vertex: %d, bid value: %.2f]\n",this->get_clock()->now().seconds(),senderId,nv,bv);
 #endif
 	update_bids(nv,bv,senderId);
 }

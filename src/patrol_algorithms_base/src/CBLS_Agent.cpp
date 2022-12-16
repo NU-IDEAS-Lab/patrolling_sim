@@ -36,13 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
-
 #include "PatrolAgent.h"
 #include "getgraph.h"
 #include "algorithms.h"
@@ -76,7 +69,7 @@ private:
   uint hist_dimension;
       
 public:
-    virtual void init(int argc, char** argv);
+    CBLS_Agent();
     virtual int compute_next_vertex();
     virtual void processEvents();
     virtual void send_results();
@@ -85,11 +78,9 @@ public:
 };
 
 
-void CBLS_Agent::init(int argc, char** argv) {
+CBLS_Agent::CBLS_Agent() : PatrolAgent() {
    
-  PatrolAgent::init(argc,argv);
-  
-  NUMBER_OF_ROBOTS = atoi(argv[3]);
+  NUMBER_OF_ROBOTS = this->agent_count;
   uint number_of_edges = GetNumberEdges(vertex_web, dimension);  
     
   //INITIALIZE tab_intention:
@@ -122,7 +113,7 @@ void CBLS_Agent::init(int argc, char** argv) {
   } 
   
   //INITIALIZE tables:
-  double time_zero = rclcpp::Time::now().toSec();  
+  double time_zero = this->get_clock()->now().seconds();  
 
   avg_idleness = new double[dimension];	//closed avg
   cur_avg_idleness = new double[dimension];	//avg + inst
@@ -149,7 +140,7 @@ void CBLS_Agent::onGoalComplete() {
       
     		/** PUNISH & REWARD -- BEFORE **/ 
 		//Update Idleness Table:
-		now = rclcpp::Time::now().toSec();
+		now = this->get_clock()->now().seconds();
 			
 		for(int i=0; i<dimension; i++){
 			if (i == next_vertex){
@@ -158,7 +149,7 @@ void CBLS_Agent::onGoalComplete() {
 				avg_idleness[i] = ( avg_idleness[i] * (double) (node_count [i] - 1) + instantaneous_idleness [i] ) / ( (double) node_count [i] );		  		    
 			}	
 			instantaneous_idleness[i]= now - last_visit[i];  //ou seja: Zero para o next_vertex			
-			//ROS_INFO("inst_idleness[%d] = %f", i, instantaneous_idleness[i]);
+			//RCLCPP_INFO(this->get_logger(), "inst_idleness[%d] = %f", i, instantaneous_idleness[i]);
 			
 			//Update Curr Avg Idleness Table:
 			cur_avg_idleness [i] = ( avg_idleness [i] * (double) (node_count [i]) + instantaneous_idleness [i] ) / ( (double) node_count [i] + 1 );
@@ -176,7 +167,7 @@ void CBLS_Agent::onGoalComplete() {
 		}*/
 		  
 		decision_number++;
-		//ROS_INFO("decision_number = %lld", decision_number);		
+		//RCLCPP_INFO(this->get_logger(), "decision_number = %lld", decision_number);		
 		  
 		current_vertex = next_vertex;		  
     }
@@ -185,7 +176,7 @@ void CBLS_Agent::onGoalComplete() {
 	next_vertex = compute_next_vertex();
 	
 	if(next_vertex == -1){
-	 ROS_ERROR("ABORT (learning_algorithm: next_vertex = -1)");
+	 RCLCPP_ERROR(this->get_logger(), "ABORT (learning_algorithm: next_vertex = -1)");
 	 exit(-1);
 	}	
 	/** *****************************************************/  
@@ -204,7 +195,7 @@ void CBLS_Agent::onGoalComplete() {
 	  send_goal_reached(); // Send TARGET to monitor
 	  send_results();  // Algorithm specific function
 	  
-	  ROS_INFO("Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
+	  RCLCPP_INFO(this->get_logger(), "Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
 	  //sendGoal(vertex_web[next_vertex].x, vertex_web[next_vertex].y);  
 	  sendGoal(next_vertex);  // send to move_base
 	  
@@ -218,10 +209,10 @@ void CBLS_Agent::processEvents() {
     
     if (arrived && NUMBER_OF_ROBOTS>1){ //a different robot arrived at a vertex: update idleness table and keep track of last vertices positions of other robots.
 
-        //ROS_INFO("Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
+        //RCLCPP_INFO(this->get_logger(), "Robot %d reached Goal %d.\n", robot_arrived, vertex_arrived);    
 
         //Update Idleness Table:
-        now = rclcpp::Time::now().toSec();
+        now = this->get_clock()->now().seconds();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){
@@ -233,7 +224,7 @@ void CBLS_Agent::processEvents() {
             //actualizar instantaneous_idleness[dimension]
             instantaneous_idleness[i] = now - last_visit[i];      
 	    cur_avg_idleness [i] = ( avg_idleness [i] * (double) (node_count [i]) + instantaneous_idleness [i] ) / ( (double) node_count [i] + 1 );		  	  		  	    
-	    //ROS_INFO("idleness[%d] = %f", i, instantaneous_idleness[i]);
+	    //RCLCPP_INFO(this->get_logger(), "idleness[%d] = %f", i, instantaneous_idleness[i]);
         }     
         
         arrived = false;
@@ -251,7 +242,7 @@ void CBLS_Agent::processEvents() {
 int CBLS_Agent::compute_next_vertex() {
     int value = ID_ROBOT;
     if (value==-1){value=0;}
-    return learning_algorithm (this->get_clock(), vertex_web, instantaneous_idleness, cur_avg_idleness, tab_intention, histogram, source, destination, hist_dimension, TEAMSIZE, value, node_count, RL);
+    return learning_algorithm (this->get_clock(), current_vertex, vertex_web, instantaneous_idleness, cur_avg_idleness, tab_intention, histogram, source, destination, hist_dimension, this->agent_count, value, node_count, RL);
 }
 
 
@@ -259,12 +250,12 @@ void CBLS_Agent::send_results() {
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     // [ID,msg_type,vertex,intention]
-    std_msgs::Int16MultiArray msg;   
-    msg.data.clear();
-    msg.data.push_back(value);
-    msg.data.push_back(CBLS_MSG_TYPE);
-    msg.data.push_back(current_vertex);
-    msg.data.push_back(next_vertex);    
+    auto msg  = std::make_shared<std_msgs::msg::Int16MultiArray>();   
+    msg->data.clear();
+    msg->data.push_back(value);
+    msg->data.push_back(CBLS_MSG_TYPE);
+    msg->data.push_back(current_vertex);
+    msg->data.push_back(next_vertex);    
     do_send_message(msg);
 }
 
@@ -290,9 +281,9 @@ void CBLS_Agent::receive_results() {
 
 int main(int argc, char** argv) {
 
-    CBLS_Agent agent;
-    agent.init(argc,argv);    
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<CBLS_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

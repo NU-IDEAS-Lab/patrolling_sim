@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 
@@ -53,17 +47,15 @@ private:
     uint *path;
     uint elem_s_path, i_path;
 public:
-    virtual void init(int argc, char** argv);
+    Conscientious_Cognitive_Agent();
     virtual int compute_next_vertex();
     virtual void onGoalComplete();    
     //virtual void send_results();
     //virtual void receive_results();    
 };
 
-void Conscientious_Cognitive_Agent::init(int argc, char** argv)
-{
-    PatrolAgent::init(argc,argv);
-    
+Conscientious_Cognitive_Agent::Conscientious_Cognitive_Agent() : PatrolAgent()
+{    
     inpath = false;
     path = new uint[dimension];
     elem_s_path=0; i_path=0; 
@@ -120,14 +112,14 @@ void Conscientious_Cognitive_Agent::onGoalComplete()
 
     if (inpath){
         //Send the goal to the robot (Global Map)
-        ROS_INFO("Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
+        RCLCPP_INFO(this->get_logger(), "Sending goal - Vertex %d (%f,%f)\n", next_vertex, vertex_web[next_vertex].x, vertex_web[next_vertex].y);
         sendGoal(next_vertex);
     }    
 
     goal_complete = false; //garantir q n volta a entrar a seguir aqui
 //     printf("ID_ROBOT [3] = %d\n",ID_ROBOT); //-1 in the case there is only 1 robot.
 
-  ros::spinOnce();
+//   ros::spinOnce();
     
 }
 
@@ -145,9 +137,9 @@ void Conscientious_Cognitive_Agent::receive_results() {
 
 int main(int argc, char** argv) {
   
-    Conscientious_Cognitive_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<Conscientious_Cognitive_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

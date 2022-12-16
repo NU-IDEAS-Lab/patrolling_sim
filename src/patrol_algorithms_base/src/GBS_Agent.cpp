@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 #include "getgraph.h"
@@ -62,7 +56,7 @@ private:
   int robot_arrived;  
 
 public:
-    virtual void init(int argc, char** argv);
+    GBS_Agent();
     virtual int compute_next_vertex();
     virtual void send_results();
     virtual void receive_results();    
@@ -71,11 +65,9 @@ public:
 
 
 
-void GBS_Agent::init(int argc, char** argv) {
+GBS_Agent::GBS_Agent() : PatrolAgent() {
   
-  PatrolAgent::init(argc,argv);
- 
-  NUMBER_OF_ROBOTS = atoi(argv[3]);
+  NUMBER_OF_ROBOTS = this->agent_count;
   arrived = false; 
   
   /** Define G1 and G2 **/
@@ -120,13 +112,13 @@ void GBS_Agent::processEvents() {
     if (arrived && NUMBER_OF_ROBOTS>1){ //a different robot arrived at a vertex: update idleness table and keep track of last vertices positions of other robots.
 
         //Update Idleness Table:
-        double now = rclcpp::Time::now().toSec();
+        double now = this->get_clock()->now().seconds();
                 
         for(int i=0; i<dimension; i++){
             if (i == vertex_arrived){
                 //actualizar last_visit[dimension]
                 last_visit[vertex_arrived] = now; 
-		//ROS_INFO("Just updated idleness of vertex %d", i);		
+		//RCLCPP_INFO(this->get_logger(), "Just updated idleness of vertex %d", i);		
             }         
             //actualizar instantaneous_idleness[dimension]
             instantaneous_idleness[i] = now - last_visit[i];
@@ -135,7 +127,6 @@ void GBS_Agent::processEvents() {
         arrived = false;
     }
     
-    ros::spinOnce();
 }
 
 int GBS_Agent::compute_next_vertex() {
@@ -147,11 +138,11 @@ void GBS_Agent::send_results() {
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     // [ID,msg_type,vertex]
-    std_msgs::Int16MultiArray msg;   
-    msg.data.clear();
-    msg.data.push_back(value);
-    msg.data.push_back(GBS_MSG_TYPE);
-    msg.data.push_back(current_vertex);
+    auto msg = std::make_shared<std_msgs::msg::Int16MultiArray>();   
+    msg->data.clear();
+    msg->data.push_back(value);
+    msg->data.push_back(GBS_MSG_TYPE);
+    msg->data.push_back(current_vertex);
     do_send_message(msg);
 }
 
@@ -175,9 +166,9 @@ void GBS_Agent::receive_results() {
 
 int main(int argc, char** argv) {
 
-    GBS_Agent agent;
-    agent.init(argc,argv);    
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<GBS_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

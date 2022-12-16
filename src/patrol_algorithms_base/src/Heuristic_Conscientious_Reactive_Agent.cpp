@@ -36,12 +36,6 @@
 *********************************************************************/
 
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 #include "algorithms.h"
@@ -72,9 +66,9 @@ void Heuristic_Conscientious_Reactive_Agent::receive_results() {
 
 int main(int argc, char** argv) {
   
-    Heuristic_Conscientious_Reactive_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<Heuristic_Conscientious_Reactive_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

@@ -65,21 +65,18 @@ protected:
 
 public:
 
-    DTASSIPart_Agent(){}	
-
-    void init(int argc, char** argv);
+    DTASSIPart_Agent();
 
 
 };
 
-void DTASSIPart_Agent::init(int argc, char** argv) {
+DTASSIPart_Agent::DTASSIPart_Agent() : SSIPatrolAgent() {
     
 //    logfile = fopen("DTASSIOut.log","w");	
 
 //    fprintf(logfile,"INITIALIZING \n");
 //    fflush(logfile);	
 
-    SSIPatrolAgent::init(argc,argv);
 
 //    fprintf(logfile,"INITIALIZING 2 \n");
 //    fflush(logfile);	
@@ -216,9 +213,9 @@ void DTASSIPart_Agent::update_tasks(){
 
 int main(int argc, char** argv) {
   
-    DTASSIPart_Agent agent;
-    agent.init(argc,argv);
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<DTASSIPart_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

@@ -37,12 +37,6 @@
 
 #include <string>
 #include <sstream>
-#include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <actionlib/client/simple_action_client.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <nav_msgs/Odometry.h>
 
 #include "PatrolAgent.h"
 #include "algorithms.h"
@@ -57,7 +51,7 @@ private:
     uint *route;
     
 public:
-    virtual void init(int argc, char** argv);
+    MSP_Agent();
     virtual int compute_next_vertex();
     //virtual void send_results();
     //virtual void receive_results();    
@@ -65,12 +59,11 @@ public:
 
 
 
-void MSP_Agent::init(int argc, char** argv) {
+MSP_Agent::MSP_Agent() : PatrolAgent() {
     
-    string msp_file = string(argv[4]);
-    
-    PatrolAgent::init(argc,argv);
-    
+    this->declare_parameter("msp_file", "");
+    string msp_file = this->get_parameter("msp_file").get_parameter_value().get<std::string>();
+        
     //Check Route Dimension:
     route_dimension = get_MSP_dimension(msp_file.c_str());
     
@@ -115,9 +108,9 @@ void MSP_Agent::receive_results() {
 
 int main(int argc, char** argv) {
     
-    MSP_Agent agent;
-    agent.init(argc,argv);    
-    agent.run();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<MSP_Agent>());
+    rclcpp::shutdown();
 
     return 0; 
 }

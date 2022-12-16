@@ -96,6 +96,7 @@
         "random": "cpp",
         "string_view": "cpp",
         "numbers": "cpp",
-        "semaphore": "cpp"
+        "semaphore": "cpp",
+        "climits": "cpp"
     }
 }
