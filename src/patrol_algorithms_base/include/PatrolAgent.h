@@ -55,6 +55,7 @@
 #include "std_msgs/msg/int16_multi_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
 #include "getgraph.h"
 #include "patrolling_sim_interfaces/message_types.h"
@@ -108,6 +109,7 @@ protected:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr positions_pub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr results_pub;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+    rclcpp::Client<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clientCostmapLocalClear;
 
     
 public:
@@ -126,7 +128,7 @@ public:
     void readParams(); // read ROS parameters
     void update_idleness();  // local idleness
     
-    virtual void run();
+    virtual void run_once();
     
     void getRobotPose(int robotid, float &x, float &y, float &theta);
     void odomCB(nav_msgs::msg::Odometry::ConstSharedPtr msg);
@@ -146,6 +148,7 @@ public:
     bool check_interference (int ID_ROBOT);
     void do_interference_behavior();
     void backup();
+    void clearLocalCostmap(bool waitForService);
     
     void onGoalNotComplete(); // what to do when a goal has NOT been reached (aborted)
     

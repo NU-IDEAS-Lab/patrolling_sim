@@ -87,6 +87,15 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "cwctype": "cpp",
+        "any": "cpp",
+        "*.tcc": "cpp",
+        "cinttypes": "cpp",
+        "memory_resource": "cpp",
+        "random": "cpp",
+        "string_view": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     }
 }

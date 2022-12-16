@@ -251,7 +251,7 @@ void CBLS_Agent::processEvents() {
 int CBLS_Agent::compute_next_vertex() {
     int value = ID_ROBOT;
     if (value==-1){value=0;}
-    return learning_algorithm (current_vertex, vertex_web, instantaneous_idleness, cur_avg_idleness, tab_intention, histogram, source, destination, hist_dimension, TEAMSIZE, value, node_count, RL);
+    return learning_algorithm (this->get_clock(), vertex_web, instantaneous_idleness, cur_avg_idleness, tab_intention, histogram, source, destination, hist_dimension, TEAMSIZE, value, node_count, RL);
 }
 
 

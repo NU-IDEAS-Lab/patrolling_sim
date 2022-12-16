@@ -40,7 +40,8 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
-// #include <ros/ros.h>
+
+#include <rclcpp/rclcpp.hpp>
 
 #include "getgraph.h"
 #include "algorithms.h"
@@ -2871,7 +2872,7 @@ void write_reward_evolution(double reward, uint robotid){ //"results/reward_evol
     reward_count++;  
 }
 
-void update_likelihood_old (reinforcement_learning RL, double *real_histogram, double *hist_sort, uint size_hist, vertex *vertex_web){ //actualizar idleness_new: campo que falta preencher na struct
+void update_likelihood_old (rclcpp::Clock::SharedPtr clock, reinforcement_learning RL, double *real_histogram, double *hist_sort, uint size_hist, vertex *vertex_web){ //actualizar idleness_new: campo que falta preencher na struct
 
   //só se:   RL.num_possible_neighs > 1 :: 1ª verificação para evitar analisar lixo
   if (RL.num_possible_neighs <= 1){
@@ -2907,7 +2908,7 @@ void update_likelihood_old (reinforcement_learning RL, double *real_histogram, d
   if (node_min == node_max){ //check idleness effect:
     
     double idleness_new [RL.num_possible_neighs];
-    double add_time = rclcpp::Time::now().toSec() - (RL.time_then);
+    double add_time = clock->now().seconds() - (RL.time_then);
     
     //double idleness_old_current = 0.0;
     //double idleness_new_current = add_time;
@@ -3444,7 +3445,7 @@ void update_likelihood_new (reinforcement_learning RL, uint *node_count_table, d
 
 }
 
-int learning_algorithm(uint current_vertex, vertex *vertex_web, double *instantaneous_idleness, double *avg_idleness, int *tab_intention, double *histogram, uint *source, uint *destination, uint hist_dimension, int nr_robots, int id_robot, uint *node_count, reinforcement_learning &RL){
+int learning_algorithm(rclcpp::Clock::SharedPtr clock, uint current_vertex, vertex *vertex_web, double *instantaneous_idleness, double *avg_idleness, int *tab_intention, double *histogram, uint *source, uint *destination, uint hist_dimension, int nr_robots, int id_robot, uint *node_count, reinforcement_learning &RL){
   
     RL.current_vertex = current_vertex;
     int next_vertex; //result of the decision 
@@ -3722,7 +3723,7 @@ int learning_algorithm(uint current_vertex, vertex *vertex_web, double *instanta
       
     }
     
-    RL.time_then = rclcpp::Time::now().toSec();
+    RL.time_then = clock->now().seconds();
     RL.next_vertex = next_vertex;    
     return next_vertex;
 
