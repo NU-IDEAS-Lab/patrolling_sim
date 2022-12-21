@@ -98,5 +98,6 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "climits": "cpp"
-    }
+    },
+    "python.analysis.typeCheckingMode": "off"
 }

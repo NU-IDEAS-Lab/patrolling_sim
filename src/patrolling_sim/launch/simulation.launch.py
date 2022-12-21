@@ -109,6 +109,7 @@ def generate_launch_description():
                 "agent_count": LaunchConfiguration("agent_count"),
                 "use_rviz": LaunchConfiguration("use_rviz"),
                 "map": LaunchConfiguration("map"),
+                "gazebo_world_file": [FindPackageShare("simulation_base"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"]
             }.items()
         ),
 
