@@ -6,6 +6,7 @@ from launch_ros.actions import PushRosNamespace, SetRemap, SetParametersFromFile
 from launch.actions import IncludeLaunchDescription
 from launch.actions import GroupAction, OpaqueFunction
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler, LogInfo, EmitEvent
+from launch.actions import Shutdown as ShutdownAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
@@ -13,58 +14,8 @@ from launch.substitutions import PathJoinSubstitution, TextSubstitution, LaunchC
 from ament_index_python.packages import get_package_share_directory
 import os
 from statistics import mean
+import configparser
 
-# import launch
-
-def generate_agents(context: LaunchContext, agent_count_subst):
-    ''' Generates the list of agent launch descriptions. '''
-
-    # Convert agent count to integer.
-    agent_count = int(context.perform_substitution(agent_count_subst))
-    agents = []
-    for agent in range(agent_count):
-        agents += [
-            LogInfo(msg=TextSubstitution(text="Creating patrol agent " + str(agent))),
-            GroupAction(
-                actions = [
-                    # Set parameters.
-                    SetParameter(name="id_robot", value=str(agent)),
-                    SetParameter(name="agent_count", value=str(agent_count)),
-                    SetParameter(
-                        name="patrol_graph_file",
-                        value=[
-                            FindPackageShare("patrolling_sim"),
-                            "/models/maps/",
-                            LaunchConfiguration("map"),
-                            "/",
-                            LaunchConfiguration("map"),
-                            ".graph"
-                        ]
-                    ),
-                    SetParameter(name="initial_pos.x", value="0.0"),
-                    SetParameter(name="initial_pos.y", value="0.0"),
-
-                    # Include the robot launch file.
-                    IncludeLaunchDescription(
-                        PythonLaunchDescriptionSource([
-                            PathJoinSubstitution([
-                                FindPackageShare('patrolling_sim'),
-                                'launch',
-                                'robot.launch.py'
-                            ])
-                        ]),
-                        launch_arguments={
-                            "id": str(agent),
-                            "name": "agent" + str(agent),
-                            "algorithm_pkg": LaunchConfiguration("algorithm_pkg"),
-                            "algorithm_name": LaunchConfiguration("algorithm_name"),
-                        }.items()
-                    )
-                ]
-            )
-        ]
-    
-    return agents
 
 def generate_launch_description():
     ''' Generates the overall launch description. '''
@@ -106,7 +57,7 @@ def generate_launch_description():
                 ])
             ]),
             launch_arguments={
-                "agent_count": LaunchConfiguration("agent_count"),
+                "use_agents": "false",
                 "use_rviz": LaunchConfiguration("use_rviz"),
                 "map": LaunchConfiguration("map"),
                 "gazebo_world_file": [FindPackageShare("simulation_base"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"]
@@ -119,6 +70,109 @@ def generate_launch_description():
         # Agent nodes.
         OpaqueFunction(
             function=generate_agents,
-            args=[LaunchConfiguration('agent_count')]
+            args=[LaunchConfiguration('agent_count'), LaunchConfiguration('map')]
         ),
     ])
+
+
+def generate_agents(context: LaunchContext, agent_count_subst, map_subst):
+    ''' Generates the list of agent launch descriptions. '''
+
+    # Convert contextual info to variables.
+    agent_count = int(context.perform_substitution(agent_count_subst))
+    map = str(context.perform_substitution(map_subst))
+
+    # Load starting positions.
+    try:
+        initPosesFile = os.path.join(get_package_share_directory("patrolling_sim"), "config", "initial_poses.txt")
+        initPosesDict = loadInitPoses(initPosesFile)
+        initPosesKey = map.lower() + "_" + str(agent_count)
+        initPoses = str(initPosesDict[initPosesKey])
+        initPoses = initPoses.split(" ")
+    except:
+        return [
+            LogInfo(
+                msg="Failed to create agents! Could not load initial poses from file {0} with key {1}".format(initPosesFile, initPosesKey)
+            ),
+            ShutdownAction(
+                reason="Failed to create agents! Could not load initial poses from file {0} with key {1}".format(initPosesFile, initPosesKey)
+            )
+        ]
+
+    agents = []
+    for agent in range(agent_count):
+        agents += [
+            LogInfo(msg=TextSubstitution(text="Creating patrol agent " + str(agent))),
+            GroupAction(
+                actions = [
+                    # Set parameters.
+                    SetParameter(name="id_robot", value=str(agent)),
+                    SetParameter(name="agent_count", value=str(agent_count)),
+                    SetParameter(
+                        name="patrol_graph_file",
+                        value=[
+                            FindPackageShare("patrolling_sim"),
+                            "/models/maps/",
+                            LaunchConfiguration("map"),
+                            "/",
+                            LaunchConfiguration("map"),
+                            ".graph"
+                        ]
+                    ),
+                    SetParameter(name="initial_pos.x", value=str(initPoses[agent * 2])),
+                    SetParameter(name="initial_pos.y", value=str(initPoses[agent * 2 + 1])),
+
+                    # Include the robot launch file.
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource([
+                            PathJoinSubstitution([
+                                FindPackageShare('patrolling_sim'),
+                                'launch',
+                                'robot.launch.py'
+                            ])
+                        ]),
+                        launch_arguments={
+                            "id": str(agent),
+                            "name": "agent" + str(agent),
+                            "algorithm_pkg": LaunchConfiguration("algorithm_pkg"),
+                            "algorithm_name": LaunchConfiguration("algorithm_name"),
+                        }.items()
+                    ),
+
+                    # Launch the actual robot (copied from simulation_base)
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource([
+                            PathJoinSubstitution([
+                                FindPackageShare('simulation_base'),
+                                'launch',
+                                'robot.launch.py'
+                            ])
+                        ]),
+                        launch_arguments={
+                            "id": str(agent),
+                            "name": "agent" + str(agent),
+                            "use_rviz": LaunchConfiguration("use_rviz"),
+                            "map": LaunchConfiguration("map"),
+                            "pose_x": str(initPoses[agent * 2]),
+                            "pose_y": str(initPoses[agent * 2 + 1]),
+                        }.items()
+                    )
+                ]
+            )
+        ]
+    
+    return agents
+
+
+def loadInitPoses(configFile):
+    ''' Load initial poses from configuration file. '''
+    initPoses = {}
+    try:
+        ConfigIP = configparser.ConfigParser()
+        ConfigIP.read(configFile)
+        for option in ConfigIP.options("InitialPoses"):
+            # print(option)
+            initPoses[option] = ConfigIP.get("InitialPoses", option)
+    except:
+        print("Could not load initial poses file")
+    return initPoses
