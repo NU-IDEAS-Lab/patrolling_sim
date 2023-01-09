@@ -8,7 +8,7 @@
             "type": "cppdbg",
             "miDebuggerServerAddress": "localhost:3000",
             "cwd": "/",
-            "program": "/home/anthony/idev/patrolling_sim/install/patrol_algorithms_base/bin/Random"
+            "program": "/home/anthony/idev/patrolling_sim/install/monitoring_control/lib/monitoring_control/monitor"
         }
     ]
 }

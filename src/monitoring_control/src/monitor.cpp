@@ -159,10 +159,14 @@ class PatrolMonitor : public rclcpp::Node
         this->declare_parameter("map", "cumberland");
         this->declare_parameter("algorithm_name", "Random");
         this->declare_parameter("patrol_graph_file", "");
-        this->declare_parameter("goal_reached_wait", 3.0);
-        this->declare_parameter("communication_delay", 0.2);
+        this->declare_parameter("goal_reached_wait", 0.0);
+        this->declare_parameter("communication_delay", 0.0);
         this->declare_parameter("lost_message_rate", 0.0);
         this->declare_parameter("agent_count", 1);
+        this->declare_parameter("simulation_running", false);
+        this->declare_parameter("simulation_abort", false);
+        this->declare_parameter("initial_positions", "default");
+        this->declare_parameter("navigation_module", "ros");
 
         teamsize = this->get_parameter("agent_count").get_parameter_value().get<int>();
         
@@ -180,7 +184,7 @@ class PatrolMonitor : public rclcpp::Node
         printf("Algorithm: %s\n",algorithm.c_str());
         
         mapname = this->get_parameter("map").get_parameter_value().get<string>();
-        graph_file = "maps/"+mapname+"/"+mapname+".graph";
+        graph_file = this->get_parameter("patrol_graph_file").get_parameter_value().get<string>();
 
         printf("Graph: %s\n",graph_file.c_str());
             
@@ -298,8 +302,8 @@ class PatrolMonitor : public rclcpp::Node
         
         rclcpp::Rate loop_rate(30); //0.033 seconds or 30Hz
         
-        this->set_parameter(rclcpp::Parameter("/simulation_running", true));
-        this->set_parameter(rclcpp::Parameter("/simulation_abort", false));
+        this->set_parameter(rclcpp::Parameter("simulation_running", true));
+        this->set_parameter(rclcpp::Parameter("simulation_abort", false));
         
         // TODO GOECKNER - Temporarily disable /GoToStartPosSrv
         // if(ros::service::exists("/GotoStartPosSrv", false)){ //see if service has been advertised or not
@@ -312,7 +316,7 @@ class PatrolMonitor : public rclcpp::Node
         // read parameters
         try
         {
-            goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
+            goal_reached_wait = this->get_parameter("goal_reached_wait").get_parameter_value().get<double>();
         }
         catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
         {
@@ -322,7 +326,7 @@ class PatrolMonitor : public rclcpp::Node
 
         try
         {
-            comm_delay = this->get_parameter("/communication_delay").get_parameter_value().get<double>();
+            comm_delay = this->get_parameter("communication_delay").get_parameter_value().get<double>();
         }
         catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
         {
@@ -332,7 +336,7 @@ class PatrolMonitor : public rclcpp::Node
 
         try
         {
-            lost_message_rate = this->get_parameter("/lost_message_rate").get_parameter_value().get<double>();
+            lost_message_rate = this->get_parameter("lost_message_rate").get_parameter_value().get<double>();
         }
         catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
         {
@@ -342,7 +346,7 @@ class PatrolMonitor : public rclcpp::Node
 
         try
         {
-            initial_positions = this->get_parameter("/initial_positions").get_parameter_value().get<string>();
+            initial_positions = this->get_parameter("initial_positions").get_parameter_value().get<string>();
         }
         catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
         {
@@ -352,7 +356,7 @@ class PatrolMonitor : public rclcpp::Node
 
         try
         {
-            nav_mod = this->get_parameter("/navigation_module").get_parameter_value().get<string>();
+            nav_mod = this->get_parameter("navigation_module").get_parameter_value().get<string>();
         }
         catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
         {
@@ -398,7 +402,7 @@ class PatrolMonitor : public rclcpp::Node
                 if (complete_patrol==1) {
                     try
                     {
-                        algparams = this->get_parameter("/algorithm_params").get_parameter_value().get<string>();
+                        algparams = this->get_parameter("algorithm_params").get_parameter_value().get<string>();
                     }
                     catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
                     {
@@ -407,7 +411,7 @@ class PatrolMonitor : public rclcpp::Node
 
                     try
                     {
-                        goal_reached_wait = this->get_parameter("/goal_reached_wait").get_parameter_value().get<double>();
+                        goal_reached_wait = this->get_parameter("goal_reached_wait").get_parameter_value().get<double>();
                     }
                     catch(rclcpp::exceptions::ParameterNotDeclaredException &e)
                     {
@@ -518,18 +522,18 @@ class PatrolMonitor : public rclcpp::Node
                             
                 simrun=true; simabort=false;
                 std::string psimrun, psimabort; bool bsimabort;
-                if (nh.getParam("/simulation_running", psimrun))
+                if (nh.getParam("simulation_running", psimrun))
                     if (psimrun=="false")
                         simrun = false;
-                if (nh.getParam("/simulation_abort", psimabort))
+                if (nh.getParam("simulation_abort", psimabort))
                     if (psimabort=="true")
                         simabort = true;
-                if (nh.getParam("/simulation_abort", bsimabort))
+                if (nh.getParam("simulation_abort", bsimabort))
                     simabort = bsimabort;
                     
                 if ( (dead) || (!simrun) || (simabort) ) {
                     printf ("Simulation is Over\n");                
-                    nh.setParam("/simulation_running", false);
+                    nh.setParam("simulation_running", false);
                     finish_simulation ();
                     ros::spinOnce();
                     break;
@@ -1093,24 +1097,12 @@ class PatrolMonitor : public rclcpp::Node
 
 };
 
-int main(int argc, char** argv){  //pass TEAMSIZE GRAPH ALGORITHM
-  /*
-  argc=3
-  argv[0]=/.../patrolling_sim/bin/monitor
-  argv[1]=grid
-  argv[2]=ALGORITHM = {MSP,Cyc,CC,CR,HCR}
-  argv[3]=TEAMSIZE
-  */
-  
-  //ex: "rosrun patrolling_sim monitor maps/example/example.graph MSP 2"
-  
-    std::shared_ptr<PatrolMonitor> node = std::make_shared<PatrolMonitor>();
-
+int main(int argc, char** argv)
+{
     rclcpp::init(argc, argv);
+    std::shared_ptr<PatrolMonitor> node = std::make_shared<PatrolMonitor>();
     rclcpp::spin(node);
-
     node->on_experiment_end();
-
     rclcpp::shutdown();
     return 0; 
 }
