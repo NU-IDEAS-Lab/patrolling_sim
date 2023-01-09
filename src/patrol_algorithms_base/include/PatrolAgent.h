@@ -57,7 +57,7 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
-#include "getgraph.h"
+#include "patrolling_sim/getgraph.h"
 #include "patrolling_sim_interfaces/message_types.h"
 
 #define NUM_MAX_ROBOTS 32

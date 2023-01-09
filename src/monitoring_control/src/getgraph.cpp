@@ -37,7 +37,7 @@
 
 #include <ros/ros.h>
 
-#include "getgraph.h"
+#include "patrolling_sim/getgraph.h"
 
 uint WIDTH_PX;
 uint HEIGHT_PX;

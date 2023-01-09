@@ -10,8 +10,8 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>tf2</depend>
   <depend>std_msgs</depend>
+  <depend>patrolling_sim</depend>
   <depend>patrolling_sim_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>

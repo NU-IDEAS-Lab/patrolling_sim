@@ -15,6 +15,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(patrolling_sim REQUIRED)
 find_package(patrolling_sim_interfaces REQUIRED)
 
 include_directories(src include)
@@ -28,11 +29,10 @@ include_directories(src include)
 
 add_library(PatrolAgent
   src/PatrolAgent.cpp
-  src/getgraph.cpp
   src/algorithms.cpp
   src/config.cpp
 )
-ament_target_dependencies(PatrolAgent rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
+ament_target_dependencies(PatrolAgent patrolling_sim rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
 
 add_library(SSIPatrolAgent
   src/SSIPatrolAgent.cpp
