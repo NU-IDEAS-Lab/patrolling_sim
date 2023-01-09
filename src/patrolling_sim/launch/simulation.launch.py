@@ -67,6 +67,21 @@ def generate_launch_description():
         # Set parameters from file.
         SetParametersFromFile(LaunchConfiguration("params_file")),
 
+        # Set override parameters.
+        SetParameter(name="agent_count", value=LaunchConfiguration("agent_count")),
+        SetParameter(name="algorithm_name", value=LaunchConfiguration("algorithm_name")),
+        SetParameter(
+            name="patrol_graph_file",
+            value=[
+                FindPackageShare("patrolling_sim"),
+                "/models/maps/",
+                LaunchConfiguration("map"),
+                "/",
+                LaunchConfiguration("map"),
+                ".graph"
+            ]
+        ),
+
         # Agent nodes.
         OpaqueFunction(
             function=generate_agents,
@@ -107,18 +122,6 @@ def generate_agents(context: LaunchContext, agent_count_subst, map_subst):
                 actions = [
                     # Set parameters.
                     SetParameter(name="id_robot", value=str(agent)),
-                    SetParameter(name="agent_count", value=str(agent_count)),
-                    SetParameter(
-                        name="patrol_graph_file",
-                        value=[
-                            FindPackageShare("patrolling_sim"),
-                            "/models/maps/",
-                            LaunchConfiguration("map"),
-                            "/",
-                            LaunchConfiguration("map"),
-                            ".graph"
-                        ]
-                    ),
                     SetParameter(name="initial_pos.x", value=str(initPoses[agent * 2])),
                     SetParameter(name="initial_pos.y", value=str(initPoses[agent * 2 + 1])),
 

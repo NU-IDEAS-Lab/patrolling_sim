@@ -7,24 +7,53 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+
+include_directories(include)
+
+# Build GetGraph library.
+add_library(GetGraph
+  src/getgraph.cpp
+)
+ament_target_dependencies(GetGraph rclcpp)
+
+# Install include files.
+install(
+  DIRECTORY include/patrolling_sim
+  DESTINATION include
+)
 
 # Install launch files.
 install(DIRECTORY
   launch
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION share/${PROJECT_NAME}
 )
 
 # Install configuration/parameter files.
 install(DIRECTORY
   config
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION share/${PROJECT_NAME}
 )
 
 # Install map files.
 install(DIRECTORY
   models
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION share/${PROJECT_NAME}
 )
+
+# ament_export_include_directories(include)
+ament_export_targets(export_getgraph HAS_LIBRARY_TARGET)
+ament_export_dependencies(rclcpp)  
+
+install(
+  TARGETS GetGraph
+  EXPORT export_getgraph
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
