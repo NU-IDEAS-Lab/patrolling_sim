@@ -545,7 +545,7 @@ void PatrolAgent::sendGoal(int next_vertex)
     goal.pose.pose.orientation.x = 0;
     goal.pose.pose.orientation.y = 0;
     goal.pose.pose.orientation.z = 0;
-    goal.pose.pose.orientation.w = 0;
+    goal.pose.pose.orientation.w = 1;
 
     RCLCPP_INFO(this->get_logger(), "Sending goal");
 
@@ -585,7 +585,7 @@ void PatrolAgent::goalDoneCallback(const ActionGoalHandleNav2Pose::WrappedResult
             RCLCPP_INFO(this->get_logger(), "Goal not cancelled by the interference...");
 
             //RCLCPP_INFO(this->get_logger(), "Backup");
-            backup();
+            // backup();
 
             RCLCPP_INFO(this->get_logger(), "Clear costmap!");
             this->clearLocalCostmap(false);
