@@ -4,7 +4,7 @@ from launch_ros.actions import Node
 from launch_ros.actions import PushRosNamespace, SetRemap, SetParametersFromFile, SetParameter
 
 from launch.actions import IncludeLaunchDescription
-from launch.actions import GroupAction, OpaqueFunction
+from launch.actions import GroupAction, OpaqueFunction, SetEnvironmentVariable
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler, LogInfo, EmitEvent
 from launch.actions import Shutdown as ShutdownAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -46,6 +46,11 @@ def generate_launch_description():
             ])
         ),
 
+        # Enabled colorized console output.
+        SetEnvironmentVariable(
+            name="RCUTILS_COLORIZED_OUTPUT",
+            value="1"
+        ),
 
         # Launch the simulation base.
         IncludeLaunchDescription(
@@ -70,6 +75,7 @@ def generate_launch_description():
         # Set override parameters.
         SetParameter(name="agent_count", value=LaunchConfiguration("agent_count")),
         SetParameter(name="algorithm_name", value=LaunchConfiguration("algorithm_name")),
+        SetParameter(name="map", value=LaunchConfiguration("map")),
         SetParameter(
             name="patrol_graph_file",
             value=[
@@ -86,6 +92,14 @@ def generate_launch_description():
         OpaqueFunction(
             function=generate_agents,
             args=[LaunchConfiguration('agent_count'), LaunchConfiguration('map')]
+        ),
+
+        # Monitor/control node.
+        Node(
+            package="monitoring_control",
+            executable="monitor",
+            name="monitor",
+            exec_name="monitor"
         ),
     ])
 

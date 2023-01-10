@@ -79,6 +79,8 @@ protected:
     std::unique_ptr<tf2_ros::Buffer> tfBuffer;
     std::shared_ptr<tf2_ros::TransformListener> listener{nullptr};
 
+    rclcpp::TimerBase::SharedPtr timer;
+
     std::string graph_file, mapname;
     uint dimension; // Graph Dimension
     uint current_vertex; // current vertex
@@ -86,9 +88,9 @@ protected:
     bool interference;
     double last_interference;
     bool goal_complete;
-    bool initialize;
-    bool end_simulation;
-    int next_vertex;
+    bool initialize = true;
+    bool end_simulation = false;
+    int next_vertex = -1;
     // uint backUpCounter;
     vertex *vertex_web;
     double *instantaneous_idleness;  // local idleness

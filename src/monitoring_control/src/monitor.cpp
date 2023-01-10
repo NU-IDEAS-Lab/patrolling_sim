@@ -138,8 +138,10 @@ class PatrolMonitor : public rclcpp::Node
     FILE *resultstimecsvfile;
     string idlfilename,resultsfilename,resultstimecsvfilename,expname;
 
+    rclcpp::TimerBase::SharedPtr timer;
+
     string graph_file;
-    char teamsize_str[3];
+    char teamsize_str[10];
     string mapname;
     char hostname[80];
     bool dead = false; // check if there is a dead robot
@@ -175,18 +177,18 @@ class PatrolMonitor : public rclcpp::Node
             throw std::invalid_argument("The Teamsize must be an integer number between 1 and NUM_MAX_ROBOTS");
         }else{
             strcpy (teamsize_str, std::to_string(teamsize).c_str()); 
-        //     printf("teamsize: %s\n", teamsize_str);
-        //     printf("teamsize: %u\n", teamsize);
+            //  RCLCPP_INFO(this->get_logger(), "teamsize: %s", teamsize_str);
+            //  RCLCPP_INFO(this->get_logger(), "teamsize: %u", teamsize);
         }
         
         
         algorithm = this->get_parameter("algorithm_name").get_parameter_value().get<string>();
-        printf("Algorithm: %s\n",algorithm.c_str());
+        RCLCPP_INFO(this->get_logger(), "Algorithm: %s\n",algorithm.c_str());
         
         mapname = this->get_parameter("map").get_parameter_value().get<string>();
         graph_file = this->get_parameter("patrol_graph_file").get_parameter_value().get<string>();
 
-        printf("Graph: %s\n",graph_file.c_str());
+        RCLCPP_INFO(this->get_logger(), "Graph: %s\n",graph_file.c_str());
             
         /** D.Portugal: needed in case you "rosrun" from another folder **/     
         // chdir(PS_path.c_str());
@@ -197,16 +199,14 @@ class PatrolMonitor : public rclcpp::Node
             cout << "ERROR!!! dimension > MAX_DIMENSION (static value) !!!" << endl;
             abort();
         }
-        printf("Dimension: %u\n",(uint)dimension);
+        RCLCPP_INFO(this->get_logger(), "Dimension: %u\n",(uint)dimension);
             
         int r = gethostname(hostname,80);
         if (r<0)
             strcpy(hostname,"default");
             
-        printf("Host name: %s\n",hostname);
+        RCLCPP_INFO(this->get_logger(), "Host name: %s\n",hostname);
             
-        
-        
         for (size_t i=0; i<dimension; i++){
             number_of_visits[i] = -1;  // first visit should not be cnted for avg
             current_idleness[i] = 0.0;
@@ -244,7 +244,7 @@ class PatrolMonitor : public rclcpp::Node
         if (stat(path4.c_str(), &st) != 0)
         mkdir(path4.c_str(), 0777);
 
-        printf("Path experimental results: %s\n",path4.c_str());
+        RCLCPP_INFO(this->get_logger(), "Path experimental results: %s\n",path4.c_str());
         
         // Local time (real clock time)
         time_t rawtime;
@@ -253,7 +253,7 @@ class PatrolMonitor : public rclcpp::Node
         time (&rawtime);
         timeinfo = localtime(&rawtime);
         sprintf(strnow,"%d%02d%02d_%02d%02d%02d",  timeinfo->tm_year+1900,timeinfo->tm_mon+1,timeinfo->tm_mday,timeinfo->tm_hour,timeinfo->tm_min,timeinfo->tm_sec);
-        printf("Date-time of the experiment: %s\n",strnow);
+        RCLCPP_INFO(this->get_logger(), "Date-time of the experiment: %s\n",strnow);
         
         // File to log all the idlenesses of an experimental scenario
 
@@ -290,17 +290,16 @@ class PatrolMonitor : public rclcpp::Node
         #endif
                 
         //Subscribe "results" from robots
-        results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("results", 100, std::bind(&PatrolMonitor::resultsCB, this, std::placeholders::_1)); 
+        results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", 100, std::bind(&PatrolMonitor::resultsCB, this, std::placeholders::_1)); 
         
         //Publish data to "results"
-        // results_pub = nh.advertise<std_msgs::Int16MultiArray>("results", 100);
-        results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("results", 100);
+        results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", 100);
         
         #if EXTENDED_STAGE  
             screenshot_pub = nh.advertise<std_msgs::String>("/stageGUIRequest", 100);
         #endif    
         
-        rclcpp::Rate loop_rate(30); //0.033 seconds or 30Hz
+        rclcpp::Rate loop_rate(1.0); // 1 Hz
         
         this->set_parameter(rclcpp::Parameter("simulation_running", true));
         this->set_parameter(rclcpp::Parameter("simulation_abort", false));
@@ -364,18 +363,15 @@ class PatrolMonitor : public rclcpp::Node
             RCLCPP_WARN(this->get_logger(), "Cannot read parameter /navigation_module. Using default value 'ros'!");
         }
 
-
         // mutex for accessing last_goal_reached vector
         pthread_mutex_init(&lock_last_goal_reached, NULL);
 
-        this->create_wall_timer(loop_rate.period(), std::bind(&PatrolMonitor::run_once, this));
-
+        timer = this->create_wall_timer(loop_rate.period(), std::bind(&PatrolMonitor::run_once, this));
     }
 
 
     void run_once()
     {
-            
         dolog("main loop - begin");
 
         if (!initialize)
@@ -384,7 +380,7 @@ class PatrolMonitor : public rclcpp::Node
             // check time
             double report_time = this->get_clock()->now().seconds();
             
-            // printf("### report time=%.1f  last_report_time=%.1f diff = %.1f\n",report_time, last_report_time, report_time - last_report_time);
+            // RCLCPP_INFO(this->get_logger(), "### report time=%.1f  last_report_time=%.1f diff = %.1f\n",report_time, last_report_time, report_time - last_report_time);
             
             // write results every TIMEOUT_WRITE_RESULTS_(FOREVER) seconds anyway
             bool timeout_write_results;
@@ -424,8 +420,8 @@ class PatrolMonitor : public rclcpp::Node
                 // or after some time
                 previous_avg_graph_idl = avg_graph_idl; //save previous avg idleness graph value
 
-                printf("******************************************\n");
-                printf("Patrol completed [%d]. Write to File!\n",complete_patrol);
+                RCLCPP_INFO(this->get_logger(), "******************************************\n");
+                RCLCPP_INFO(this->get_logger(), "Patrol completed [%d]. Write to File!\n",complete_patrol);
 
                 worst_avg_idleness = 0.0;
                 avg_graph_idl = 0.0;
@@ -459,20 +455,20 @@ class PatrolMonitor : public rclcpp::Node
                 time_t real_now; time (&real_now); 
                 double real_duration = (double)real_now - (double)real_time_zero;				
                 
-                printf("Node idleness\n");
-                printf("   worst_avg_idleness (graph) = %.2f\n", worst_avg_idleness);
-                printf("   avg_idleness (graph) = %.2f\n", avg_graph_idl);
+                RCLCPP_INFO(this->get_logger(), "Node idleness\n");
+                RCLCPP_INFO(this->get_logger(), "   worst_avg_idleness (graph) = %.2f\n", worst_avg_idleness);
+                RCLCPP_INFO(this->get_logger(), "   avg_idleness (graph) = %.2f\n", avg_graph_idl);
                 median_graph_idl = Median (avg_idleness, dimension);
-                printf("   median_idleness (graph) = %.2f\n", median_graph_idl);
-                printf("   stddev_idleness (graph) = %.2f\n", stddev_graph_idl);
+                RCLCPP_INFO(this->get_logger(), "   median_idleness (graph) = %.2f\n", median_graph_idl);
+                RCLCPP_INFO(this->get_logger(), "   stddev_idleness (graph) = %.2f\n", stddev_graph_idl);
 
-                printf("Global idleness\n");
-                printf("   min = %.1f\n", min_idleness);
-                printf("   avg = %.1f\n", gavg);
-                printf("   stddev = %.1f\n", gstddev);
-                printf("   max = %.1f\n", max_idleness);
+                RCLCPP_INFO(this->get_logger(), "Global idleness\n");
+                RCLCPP_INFO(this->get_logger(), "   min = %.1f\n", min_idleness);
+                RCLCPP_INFO(this->get_logger(), "   avg = %.1f\n", gavg);
+                RCLCPP_INFO(this->get_logger(), "   stddev = %.1f\n", gstddev);
+                RCLCPP_INFO(this->get_logger(), "   max = %.1f\n", max_idleness);
 
-                printf("\nInterferences\t%u\nInterference rate\t%.2f\nVisits\t%u\nAvg visits per node\t%.1f\nTime Elapsed\t%.1f\nReal Time Elapsed\t%.1f\n",
+                RCLCPP_INFO(this->get_logger(), "\nInterferences\t%u\nInterference rate\t%.2f\nVisits\t%u\nAvg visits per node\t%.1f\nTime Elapsed\t%.1f\nReal Time Elapsed\t%.1f\n",
                     interference_cnt,(float)interference_cnt/duration*60,tot_visits,avg_visits,duration,real_duration);
                 
                 if (timeout_write_results)
@@ -549,6 +545,8 @@ class PatrolMonitor : public rclcpp::Node
 
     void on_experiment_end()
     {
+        RCLCPP_INFO(this->get_logger(), "Shutting down experiment.");
+
         fclose(idlfile);
         fclose(resultstimecsvfile);
     
@@ -600,7 +598,7 @@ class PatrolMonitor : public rclcpp::Node
             of1.close();   of2.close();
         #endif
             
-        printf("Monitor closed.\n");
+        RCLCPP_INFO(this->get_logger(), "Monitor closed.\n");
 
         dolog("Monitor closed");
 
@@ -609,8 +607,8 @@ class PatrolMonitor : public rclcpp::Node
         char cmd[80];
         sprintf(cmd, "mv ~/.ros/stage-000003.png %s/%s_stage.png", path4.c_str(),strnow);
         system(cmd);
-        printf("%s\n",cmd);
-        printf("Screenshot image copied.\n");
+        RCLCPP_INFO(this->get_logger(), "%s\n",cmd);
+        RCLCPP_INFO(this->get_logger(), "Screenshot image copied.\n");
         sleep(3);  
         dolog("Snapshots done");
         #endif
@@ -661,7 +659,7 @@ class PatrolMonitor : public rclcpp::Node
             {
             if (initialize && vresults[2]==1){ 
                 if (init_robots[id_robot] == false){   //receive init msg: "ID,msg_type,1"
-                    printf("Robot [ID = %d] is Active!\n", id_robot);
+                    RCLCPP_INFO(this->get_logger(), "Robot [ID = %d] is Active!\n", id_robot);
                     init_robots[id_robot] = true;
                     
                     //Patch D.Portugal (needed to support other simulators besides Stage):
@@ -699,7 +697,7 @@ class PatrolMonitor : public rclcpp::Node
                     }
                     */
                         
-                    printf("All Robots GO!\n");
+                    RCLCPP_INFO(this->get_logger(), "All Robots GO!\n");
                     initialize = false;
                         
                     //Clock Reset:
@@ -707,7 +705,7 @@ class PatrolMonitor : public rclcpp::Node
                     last_report_time = time_zero; 
                                         
                     time (&real_time_zero);
-                    printf("Time zero = %.1f (sim) = %lu (real) \n", time_zero,(long)real_time_zero);
+                    RCLCPP_INFO(this->get_logger(), "Time zero = %.1f (sim) = %lu (real) \n", time_zero,(long)real_time_zero);
 
                     std_msgs::msg::Int16MultiArray msg;  // -1,msg_type,100,0,0
                     msg.data.clear();
@@ -954,8 +952,8 @@ class PatrolMonitor : public rclcpp::Node
 
         FILE *file;
     
-        printf("writing to file %s\n",filename.c_str());
-        // printf("graph file %s\n",graph_file);
+        RCLCPP_INFO(this->get_logger(), "writing to file %s\n",filename.c_str());
+        // RCLCPP_INFO(this->get_logger(), "graph file %s\n",graph_file);
             
         file = fopen (filename.c_str(),"a");
         
@@ -999,13 +997,13 @@ class PatrolMonitor : public rclcpp::Node
         for (size_t i=0; i<teamsize; i++) {
             double l = get_last_goal_reached(i);
             double delta = current_time - l;
-            // printf("DEBUG dead robot: %d   %.1f - %.1f = %.1f\n",i,current_time,l,delta);
+            // RCLCPP_INFO(this->get_logger(), "DEBUG dead robot: %d   %.1f - %.1f = %.1f\n",i,current_time,l,delta);
             if (delta>DEAD_ROBOT_TIME*0.75) {
-                printf("Robot %lu: dead robot - delta = %.1f / %.1f \n",i,delta,DEAD_ROBOT_TIME);
+                RCLCPP_INFO(this->get_logger(), "Robot %lu: dead robot - delta = %.1f / %.1f \n",i,delta,DEAD_ROBOT_TIME);
                 system("play -q beep.wav");
             }
             if (delta>DEAD_ROBOT_TIME) {
-                // printf("Dead robot %d. Time from last goal reached = %.1f\n",i,delta);
+                // RCLCPP_INFO(this->get_logger(), "Dead robot %d. Time from last goal reached = %.1f\n",i,delta);
                 r=true;
                 break;
             }
@@ -1023,17 +1021,17 @@ class PatrolMonitor : public rclcpp::Node
         dolog("  update_stats - begin");
 
         
-    //   printf("last_visit [%d] = %.1f\n", goal, last_visit [goal]);
+    //   RCLCPP_INFO(this->get_logger(), "last_visit [%d] = %.1f\n", goal, last_visit [goal]);
         double current_time = this->get_clock()->now().seconds();
 
-        printf("Robot %d reached goal %d (current time: %.2f, alg: %s, nav: %s)\n", id_robot, goal, current_time, algorithm.c_str(), nav_mod.c_str());
+        RCLCPP_INFO(this->get_logger(), "Robot %d reached goal %d (current time: %.2f, alg: %s, nav: %s)\n", id_robot, goal, current_time, algorithm.c_str(), nav_mod.c_str());
                 
         double last_visit_temp = current_time - time_zero; //guarda o valor corrente
         number_of_visits [goal] ++;
         
         set_last_goal_reached(id_robot,current_time);
 
-        printf("   nr_of_visits = %d -", number_of_visits [goal]);
+        RCLCPP_INFO(this->get_logger(), "   nr_of_visits = %d -", number_of_visits [goal]);
 
         if (number_of_visits [goal] == 0) {
             avg_idleness [goal] = 0.0; stddev_idleness[goal] = 0.0;
@@ -1056,9 +1054,9 @@ class PatrolMonitor : public rclcpp::Node
             avg_idleness [goal] = total_1[goal]/total_0[goal]; 
             stddev_idleness[goal] = 1.0/total_0[goal] * sqrt(total_0[goal]*total_2[goal]-total_1[goal]*total_1[goal]); 
             
-            printf(" idl current = %.2f, ", current_idleness[goal]);
-            printf(" avg = %.1f, stddev = %.1f,", avg_idleness [goal], stddev_idleness[goal]);
-            printf(" max = %.1f - interf = %d\n", max_idleness,interference_cnt);
+            RCLCPP_INFO(this->get_logger(), " idl current = %.2f, ", current_idleness[goal]);
+            RCLCPP_INFO(this->get_logger(), " avg = %.1f, stddev = %.1f,", avg_idleness [goal], stddev_idleness[goal]);
+            RCLCPP_INFO(this->get_logger(), " max = %.1f - interf = %d\n", max_idleness,interference_cnt);
 
             // save data in idleness file
             fprintf(idlfile,"%.1f;%d;%d;%.1f;%d\n",current_time,id_robot,goal,current_idleness[goal],interference_cnt);
@@ -1075,7 +1073,7 @@ class PatrolMonitor : public rclcpp::Node
         }
 
         complete_patrol = calculate_patrol_cycle ( number_of_visits, dimension );                
-        printf("   complete patrol cycles = %d\n", complete_patrol); 
+        RCLCPP_INFO(this->get_logger(), "   complete patrol cycles = %d\n", complete_patrol); 
         
         // Compute node with highest current idleness
         size_t hnode; double hidl=0;
@@ -1085,7 +1083,7 @@ class PatrolMonitor : public rclcpp::Node
                 hidl=cidl; hnode=i;
             }
         }
-        printf("   highest current idleness: node %lu idl %.1f\n\n",hnode,hidl);
+        RCLCPP_INFO(this->get_logger(), "   highest current idleness: node %lu idl %.1f\n\n",hnode,hidl);
         
         last_visit [goal] = last_visit_temp;
         
