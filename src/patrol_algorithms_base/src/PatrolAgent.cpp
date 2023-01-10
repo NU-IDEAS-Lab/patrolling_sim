@@ -222,14 +222,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->clientCostmapLocalClear = this->create_client<nav2_msgs::srv::ClearEntireCostmap>(
         "local_costmap/clear_entirely_local_costmap"
     );
-
-    // ros::spinOnce(); 
     
     //Publicar dados para "results"
-    // results_pub = nh.advertise<std_msgs::Int16MultiArray>("results", 100);
     results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", 100);
-    // results_sub = nh.subscribe("results", 10, resultsCB); //Subscrever "results" vindo dos robots
-    // results_sub = nh.subscribe<std_msgs::Int16MultiArray>("results", 100, boost::bind(&PatrolAgent::resultsCB, this, _1) ); //Subscrever "results" vindo dos robots
     results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", 100,
         std::bind(&PatrolAgent::resultsCB, this, std::placeholders::_1));
 
@@ -244,7 +239,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
 
     rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
 
-    this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
+    timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
 }
 
 void PatrolAgent::ready() {
@@ -259,10 +254,10 @@ void PatrolAgent::ready() {
     // }
     
     // ac = new MoveBaseClient("move_string", true);
-    this->ac = rclcpp_action::create_client<ActionNav2Pose>(this, "nav2pose");
+    this->ac = rclcpp_action::create_client<ActionNav2Pose>(this, "navigate_to_pose");
     
     //wait for the action server to come up
-    while(!this->ac->wait_for_action_server()){
+    while(!this->ac->wait_for_action_server(1s)){
         if (!rclcpp::ok())
         {
             return;
@@ -271,13 +266,22 @@ void PatrolAgent::ready() {
     } 
     RCLCPP_INFO(this->get_logger(), "Connected with nav2 action server");    
     
-    initialize_node(); //announce that agent is alive
-    
     rclcpp::Rate loop_rate(1); //1 sec
+
+    // Wait for transform to become available.
+    while(!this->tfBuffer->canTransform("base_link", "map", tf2::TimePointZero))
+    {
+        RCLCPP_INFO(this->get_logger(), "Waiting for transform from map->base_link.");
+        rclcpp::spin_some(this->get_node_base_interface());
+        loop_rate.sleep();
+    } 
+    RCLCPP_INFO(this->get_logger(), "Transform from map->base_link received.");
+
     
     /* Wait until all nodes are ready.. */
-    while(initialize){
-        // ros::spinOnce();
+    while(initialize && rclcpp::ok()){
+        initialize_node(); //announce that agent is alive
+        rclcpp::spin_some(this->get_node_base_interface());
         loop_rate.sleep();
     }    
 
@@ -333,8 +337,9 @@ void PatrolAgent::clearLocalCostmap(bool waitForService)
     // nav2_msgs::srv::ClearEntireCostmap::Request request;
     auto request = std::make_shared<nav2_msgs::srv::ClearEntireCostmap::Request>();
     auto result = this->clientCostmapLocalClear->async_send_request(request);
+
     // Wait for the result.
-    if (rclcpp::spin_until_future_complete(shared_from_this(), result) == rclcpp::FutureReturnCode::SUCCESS)
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) == rclcpp::FutureReturnCode::SUCCESS)
     {
         RCLCPP_INFO(this->get_logger(), "Costmap correctly cleared before patrolling task.");
     }else{
@@ -433,6 +438,9 @@ void PatrolAgent::initialize_node (){ //ID,msg_type,1
     
     int count = 0;
     
+    results_pub->publish(msg);
+
+    /*
     //ATENÇÃO ao PUBLICADOR!
     rclcpp::Rate loop_rate(0.5); //meio segundo
     
@@ -442,7 +450,7 @@ void PatrolAgent::initialize_node (){ //ID,msg_type,1
         // ros::spinOnce();
         loop_rate.sleep();
         count++;
-    }
+    }*/
 }
 
 void PatrolAgent::getRobotPose(int robotid, float &x, float &y, float &theta) {
@@ -452,33 +460,27 @@ void PatrolAgent::getRobotPose(int robotid, float &x, float &y, float &theta) {
         return;
     }
     
-    std::stringstream ss; ss << "robot_" << robotid;
-    std::string robotname = ss.str();
-    std::string sframe = "/map";                //Patch David Portugal: Remember that the global map frame is "/map"
-    std::string dframe;
-    if(ID_ROBOT>-1){
-        dframe = "/" + robotname + "/base_link";
-    }else{
-        dframe = "/base_link";
-    }
+    std::string sframe = "map";                //Patch David Portugal: Remember that the global map frame is "/map"
+    std::string dframe = "base_link";
     
     // tf::StampedTransform transform;
     geometry_msgs::msg::TransformStamped transform;
 
-    try {
-        // listener->waitForTransform(sframe, dframe, rclcpp::Time(0), rclcpp::Duration(3));
-        // listener->lookupTransform(sframe, dframe, rclcpp::Time(0), transform);
+    try
+    {
         transform = this->tfBuffer->lookupTransform(
             dframe,
             sframe,
             tf2::TimePointZero,
-            3s
+            1s
         );
     }
-    catch(const tf2::TransformException & ex) {
+    catch(const tf2::TransformException & ex)
+    {
           RCLCPP_ERROR(
             this->get_logger(), "Could not transform %s to %s: %s",
-            dframe.c_str(), sframe.c_str(), ex.what());    }
+            dframe.c_str(), sframe.c_str(), ex.what());
+    }
 
     // x = transform.getOrigin().x();
     // y = transform.getOrigin().y();
@@ -500,6 +502,12 @@ void PatrolAgent::odomCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //coloca
     
     if (ID_ROBOT<=-1){
         idx = 0;
+    }
+
+    // We cannot yet set the transform. Fail silently (other msgs will notify user).
+    if(!this->tfBuffer->canTransform("base_link", "map", tf2::TimePointZero))
+    {
+        return;
     }
     
     float x,y,th;
@@ -848,7 +856,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
     int id_sender = vresults[0];
     int msg_type = vresults[1];
     
-    //printf(" MESSAGE FROM %d TYPE %d ...\n",id_sender, msg_type);
+    // RCLCPP_INFO(this->get_logger(), " MESSAGE FROM %d TYPE %d ...",id_sender, msg_type);
     
     // messages coming from the monitor
     if (id_sender==-1 && msg_type==INITIALIZE_MSG_TYPE) {

@@ -29,8 +29,8 @@ def generate_launch_description():
         GroupAction(
             actions=[
                 PushRosNamespace(LaunchConfiguration("name")),
-                SetRemap(src='/tf', dst=['/agent', LaunchConfiguration("id"), '/tf']),
-                SetRemap(src='/tf_static', dst=['/agent', LaunchConfiguration("id"), '/tf_static']),
+                SetRemap(src='/tf', dst='tf'),
+                SetRemap(src='/tf_static', dst='tf_static'),
                 
                 # Launch the agent logic node.
                 Node(
