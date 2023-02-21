@@ -12,7 +12,10 @@ find_package(patrol_algorithms_base REQUIRED)
 find_package(patrolling_sim REQUIRED)
 find_package(patrolling_sim_interfaces REQUIRED)
 
-add_executable(DTAR src/DTAR.cpp)
+add_executable(DTAR
+  src/DtarAgent.cpp
+  src/GraphPartitioning.cpp
+)
 target_include_directories(DTAR PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
