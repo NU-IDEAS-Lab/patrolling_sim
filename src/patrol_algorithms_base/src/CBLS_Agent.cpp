@@ -36,7 +36,7 @@
 *********************************************************************/
 
 #include <sstream>
-#include "PatrolAgent.h"
+#include "patrol_algorithms_base/PatrolAgent.h"
 #include "patrolling_sim/getgraph.h"
 #include "algorithms.h"
 

@@ -37,7 +37,7 @@
 
 #include <sstream>
 
-#include "PatrolAgent.h"
+#include "patrol_algorithms_base/PatrolAgent.h"
 #include "algorithms.h"
 
 class Heuristic_Conscientious_Reactive_Agent: public PatrolAgent {
