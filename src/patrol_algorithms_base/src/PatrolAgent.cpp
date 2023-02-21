@@ -51,7 +51,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/utils.h"
 
-#include "PatrolAgent.h"
+#include "patrol_algorithms_base/PatrolAgent.h"
 
 using namespace std;
 
