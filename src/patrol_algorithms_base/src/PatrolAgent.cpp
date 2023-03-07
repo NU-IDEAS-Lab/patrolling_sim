@@ -727,6 +727,8 @@ void PatrolAgent::do_interference_behavior()
 
 
 // ROBOT-ROBOT COMMUNICATION
+
+//bernouli_model
 bool bernouli_model(double p){
     srand(time(0));
     double r = (double) rand() / RAND_MAX;
@@ -734,6 +736,38 @@ bool bernouli_model(double p){
         return true;
     }
     return false;
+}
+
+
+
+//Gilbert_model
+bool PatrolAgent::Gil_el_model(double alpha, double beta){
+    bool result;
+    if (this->CurrentState) {
+        bool change_state = bernouli_model(alpha);
+        if (change_state){
+            this->CurrentState = !this->CurrentState;
+        }
+        if (this->CurrentState){
+            result = true;
+        }
+        else{
+            result = false;
+        }   
+    }
+    else{
+        bool change_state = bernouli_model(beta);
+        if (change_state) {
+            this->CurrentState = !this->CurrentState;
+        }
+        if (this->CurrentState){
+            result = true;
+        }
+        else{
+            result = false; 
+        }
+    }
+    return result;
 }
 
 
@@ -768,7 +802,7 @@ void PatrolAgent::receive_positions()
 
 void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //construir tabelas de posições
         this->total+=1;
-        bool receive_or_not = bernouli_model(0.5);
+        bool receive_or_not = Gil_el_model(0.8, 0.3);
 //     printf("Construir tabela de posicoes (receber posicoes), ID_ROBOT = %d\n",ID_ROBOT);    
         if (receive_or_not){
     char id[20]; //identificador do robot q enviou a msg d posição...
@@ -814,6 +848,7 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
     //printf("the total message is %d\n", this->total);
     //printf("the received message is %d\n", this->received);
     RCLCPP_INFO(this->get_logger(), "the received message is %d and the total message is %d\n", this->received, this->total);
+    RCLCPP_INFO(this->get_logger(), "the Current State is %d\n", this->CurrentState);
 }
 
 void PatrolAgent::send_results() { 

@@ -74,6 +74,7 @@ protected:
     int ID_ROBOT;
     uint total = 0;
     uint received = 0;
+    int CurrentState = 1;
 
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
@@ -160,6 +161,7 @@ public:
     virtual void processEvents();  // processes algorithm-specific events
     
     // Robot-Robot Communication
+    bool Gil_el_model(double alpha, double beta);
     void send_positions();
     void receive_positions();
     virtual void send_results();  // when goal is completed
