@@ -72,6 +72,8 @@ protected:
     
     int agent_count;
     int ID_ROBOT;
+    uint total = 0;
+    uint received = 0;
 
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)

@@ -37,6 +37,9 @@
 
 #include <sstream>
 #include <string>
+#include <random>
+#include <ctime>
+#include <cstdlib>
 // #include <ros/ros.h>
 // #include <ros/package.h> //to get pkg path
 // #include <move_base_msgs/MoveBaseAction.h>
@@ -724,7 +727,14 @@ void PatrolAgent::do_interference_behavior()
 
 
 // ROBOT-ROBOT COMMUNICATION
-
+bool bernouli_model(double p){
+    srand(time(0));
+    double r = (double) rand() / RAND_MAX;
+    if (r < p){
+        return true;
+    }
+    return false;
+}
 
 
 void PatrolAgent::send_positions()
@@ -746,7 +756,7 @@ void PatrolAgent::send_positions()
     msg.pose.pose.position.x = xPos[idx]; //send odometry.x
     msg.pose.pose.position.y = yPos[idx]; //send odometry.y
   
-    positions_pub->publish(msg);
+    //positions_pub->publish(msg);
     // ros::spinOnce();
 }
 
@@ -757,9 +767,10 @@ void PatrolAgent::receive_positions()
 }
 
 void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //construir tabelas de posições
-        
+        this->total+=1;
+        bool receive_or_not = bernouli_model(0.5);
 //     printf("Construir tabela de posicoes (receber posicoes), ID_ROBOT = %d\n",ID_ROBOT);    
-        
+        if (receive_or_not){
     char id[20]; //identificador do robot q enviou a msg d posição...
     strcpy( id, msg->header.frame_id.c_str() );
     //int stamp = msg->header.seq;
@@ -796,8 +807,13 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
         }   
 //      printf ("Position Table:\n frame.id = %s\n id_robot = %d\n xPos[%d] = %f\n yPos[%d] = %f\n\n", id, idx, idx, xPos[idx], idx, yPos[idx] );       
     }
-    
+    this->received +=1;
+    //RCLCPP_INFO(this->get_logger(), "I got the message!");
     receive_positions();
+    }
+    //printf("the total message is %d\n", this->total);
+    //printf("the received message is %d\n", this->received);
+    RCLCPP_INFO(this->get_logger(), "the received message is %d and the total message is %d\n", this->received, this->total);
 }
 
 void PatrolAgent::send_results() { 
