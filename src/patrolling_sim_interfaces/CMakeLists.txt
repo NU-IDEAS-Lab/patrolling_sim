@@ -9,10 +9,13 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 rosidl_generate_interfaces(patrolling_sim_interfaces
   "srv/GoToStartPosSrv.srv"
-  DEPENDENCIES builtin_interfaces
+  "msg/Num.msg"
+  "msg/AgentTelemetry.msg"
+  DEPENDENCIES builtin_interfaces nav_msgs
 )
 
 include_directories(include)

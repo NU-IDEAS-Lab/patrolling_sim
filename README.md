@@ -39,7 +39,7 @@ To operate the simulator, perform the following steps:
     cd ./patrolling_sim/
     ```
 
- 2) Source the installed packages, plus the Gazebo simulator, and set environment variables.
+ 2) Source the installed packages, plus the Gazebo simulator, and set environmenct variables.
    
     ```
     source ./install/setup.bash
