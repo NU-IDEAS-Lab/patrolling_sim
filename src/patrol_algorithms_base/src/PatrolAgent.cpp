@@ -830,21 +830,21 @@ bool PatrolAgent::Gil_el_model(double alpha, double beta){
 
 bool PatrolAgent::positionCBdistance(patrolling_sim_interfaces::msg::AgentTelemetry::ConstSharedPtr msg, int gamma, double pt, double ps){
     int a = this->ID_ROBOT;
-    RCLCPP_INFO(this->get_logger(), "the is agent %d\n", this->ID_ROBOT);
+    //RCLCPP_INFO(this->get_logger(), "the is agent %d\n", this->ID_ROBOT);
     double x1 = this->xPos[a];
     double y1 = this->yPos[a];
-    RCLCPP_INFO(this->get_logger(), "the postion of agent %d is %.2f and %.2f\n", a, x1, y1);
+    //RCLCPP_INFO(this->get_logger(), "the postion of agent %d is %.2f and %.2f\n", a, x1, y1);
     
 
     double x2 = msg->odom.pose.pose.position.x;
     double y2 = msg->odom.pose.pose.position.y;
-    RCLCPP_INFO(this->get_logger(), "the postion of agent %d is %.2f and %.2f\n", !a, x2, y2);
+    //RCLCPP_INFO(this->get_logger(), "the postion of agent %d is %.2f and %.2f\n", !a, x2, y2);
 
     double distance = sqrt(pow((x1-x2), 2)+ pow((y1-y2), 2));
-    RCLCPP_INFO(this->get_logger(), "the distance right now is %.2f\n", distance);
+    //RCLCPP_INFO(this->get_logger(), "the distance right now is %.2f\n", distance);
 
     double p_receive = pt-10*gamma*log10(distance);
-    RCLCPP_INFO(this->get_logger(), "the p_receive right now is %.2f\n", p_receive);
+    //RCLCPP_INFO(this->get_logger(), "the p_receive right now is %.2f\n", p_receive);
 
     bool result = p_receive > ps;
 
