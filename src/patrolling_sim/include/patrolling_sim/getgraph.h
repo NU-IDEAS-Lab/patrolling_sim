@@ -42,6 +42,9 @@
 #include <stdlib.h>
 #include <cmath>
 
+// Apparently this is set to 8, one for each cardinal and intermediate direction.
+#define GRAPH_MAX_DEGREE 8
+
 //File Line of the First Vertex ID to read (Protection) - fscanf() ignores blank lines
 #define FIRST_VID 7
 
@@ -50,10 +53,10 @@ typedef unsigned int uint;
 typedef struct {
   uint id, num_neigh;
   float x, y; 		//pass these attributes in meters
-  uint id_neigh[8], cost[8];
-  float cost_m[8];
-  bool visited[8];
-  char dir [8][3];	//table of 8 strings with 3 chars max ("N","NE","E","SE","S","SW","W","NW")
+  uint id_neigh[GRAPH_MAX_DEGREE], cost[GRAPH_MAX_DEGREE];
+  float cost_m[GRAPH_MAX_DEGREE];
+  bool visited[GRAPH_MAX_DEGREE];
+  char dir [GRAPH_MAX_DEGREE][3];	//table of 8 strings with 3 chars max ("N","NE","E","SE","S","SW","W","NW")
 }vertex;
 
 extern uint WIDTH_PX;
