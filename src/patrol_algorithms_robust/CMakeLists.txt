@@ -13,7 +13,7 @@ find_package(patrolling_sim REQUIRED)
 find_package(patrolling_sim_interfaces REQUIRED)
 
 add_executable(DTAR
-  src/DtarAgent.cpp
+  src/AhpaAgent.cpp
   src/GraphPartitioning.cpp
 )
 target_include_directories(DTAR PUBLIC

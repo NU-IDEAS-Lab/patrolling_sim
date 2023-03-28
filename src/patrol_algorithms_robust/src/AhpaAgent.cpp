@@ -1,9 +1,9 @@
 #include "rclcpp/rclcpp.hpp"
 
-#include "patrol_algorithms_robust/DtarAgent.hpp"
+#include "patrol_algorithms_robust/AhpaAgent.hpp"
 #include "patrol_algorithms_robust/GraphPartitioning.hpp"
 
-int DtarAgent::compute_next_vertex() {
+int AhpaAgent::compute_next_vertex() {
     // Random algorithm
     
     //number of neighbors of current vertex (number of existing possibilites)
@@ -24,7 +24,7 @@ int DtarAgent::compute_next_vertex() {
 int main(int argc, char ** argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<DtarAgent>());
+    rclcpp::spin(std::make_shared<AhpaAgent>());
     rclcpp::shutdown();
     return 0; 
 }
