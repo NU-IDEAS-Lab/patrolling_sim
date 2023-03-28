@@ -13,14 +13,15 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='anthony',
+    maintainer='Anthony Goeckner',
     maintainer_email='anthony.goeckner@northwestern.edu',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'BasePatrolAgent = patrol_algorithms_cdc2023.BasePatrolAgent:main'
+            'BasePatrolAgent = patrol_algorithms_cdc2023.BasePatrolAgent:main',
+            'AHPA = patrol_algorithms_cdc2023.AhpaAgent:main'
         ],
     },
 )
