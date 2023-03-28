@@ -1,4 +1,5 @@
 import networkx as nx
+import math
 
 class PatrolGraph():
     ''' This reads a graph file of the format provided by
@@ -36,3 +37,25 @@ class PatrolGraph():
                     direction = str(file.readline()) # not useful!
                     cost = int(file.readline())
                     self.graph.add_edge(i, j, weight = cost)
+    
+    def getVoronoiPartitions(self, origins):
+        ''' Returns the Voronoi partitions based on the origins provided. '''
+
+        return nx.algorithms.voronoi.voronoi_cells(self.graph, origins)
+    
+    def getOriginsFromInitialPoses(self, initialPoses):
+        ''' Given (x,y) initial positions, returns the nearest node for each position.
+            This is a horrible n^2 algorithm but that's fine for now. '''
+
+        origins = []
+        positions = nx.get_node_attributes(self.graph, 'pos')
+        for (x, y) in zip(initialPoses[0::2], initialPoses[1::2]):
+            bestDist = math.sqrt(math.pow(positions[0][0] - x, 2) + math.pow(positions[0][1] - y, 2))
+            bestNode = 0
+            for i in range(len(positions)):
+                dist = math.sqrt(math.pow(positions[i][0] - x, 2) + math.pow(positions[i][1] - y, 2))
+                if dist < bestDist:
+                    bestDist = dist
+                    bestNode = i
+            origins.append(bestNode)
+        return origins

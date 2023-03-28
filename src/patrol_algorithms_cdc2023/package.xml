@@ -12,6 +12,8 @@
   <depend>numpy</depend>
   <depend>networkx</depend>
   <depend>patrolling_sim_interfaces</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
 
 
   <test_depend>ament_copyright</test_depend>
