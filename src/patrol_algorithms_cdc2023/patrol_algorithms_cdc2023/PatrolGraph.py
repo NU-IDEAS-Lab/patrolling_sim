@@ -10,6 +10,7 @@ class PatrolGraph():
 
     def loadFromFile(self, filepath: str):
         with open(filepath, "r") as file:
+            # Read graph information.
             self.graphDimension = int(file.readline())
             self.widthPixels = int(file.readline())
             self.heightPixels = int(file.readline())
@@ -17,6 +18,7 @@ class PatrolGraph():
             self.offsetX = float(file.readline())
             self.offsetY = float(file.readline())
 
+            # Read node data.
             for _ in range(self.graphDimension):
                 file.readline()
                 
