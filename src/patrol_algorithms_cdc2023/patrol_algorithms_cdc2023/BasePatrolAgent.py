@@ -6,6 +6,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 import time
 
+from action_msgs.msg import GoalStatus
 from lifecycle_msgs.srv import GetState
 from nav_msgs.msg import Odometry
 from nav2_msgs.action import NavigateToPose
@@ -122,7 +123,7 @@ class BasePatrolAgent(Node):
         self.experimentInitialized = True
         self.get_logger().info("Let's Patrol!")
 
-        self.goToNextNode()
+        self.goToNode(self.getNextNode())
 
 
     def onTimerAdvertizeReady(self):
@@ -214,16 +215,37 @@ class BasePatrolAgent(Node):
     def onNav2PoseResult(self, future):
         ''' Called when navigation has completed. '''
 
-        result = future.result().result
-        self.get_logger().info('Result: {0}'.format(result))
+        # Check navigation status.
+        status = future.result().status
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            self.onNavigationGoalSuccess()
+        else:
+            self.onNavigationGoalFailed(status)
     
-    def goToNextNode(self):
+    def onNavigationGoalFailed(self, status):
+        ''' Called when we did not reach the navigation goal. '''
+
+        self.get_logger().error(f"Navigation failed with status code: {status}. Retrying.")
+        self.goToNode(self.goalNode)
+
+    def onNavigationGoalSuccess(self):
+        ''' Called when we have successfully navigated to a node. '''
+
+        # Notify the monitor.
+        msg = Int16MultiArray()
+        msg.data = [self.id, self.MSG_TYPES["TARGET_REACHED_MSG_TYPE"], self.goalNode]
+        self.pubResults.publish(msg)
+
+        # Go to next goal.
+        self.goToNode(self.getNextNode())
+
+    def goToNode(self, node):
         ''' Orders the agent to proceed to the next node. '''
 
-        node = self.getNextNode()
+        self.goalNode = node
         position = self.graph.getNodePosition(node)
         
-        self.get_logger().info(f"Requesting navigation goal for {position}.")
+        self.get_logger().info(f"Requesting navigation goal for node {node} {position}.")
 
         goal = NavigateToPose.Goal()
         goal.pose.header.frame_id = "map"
