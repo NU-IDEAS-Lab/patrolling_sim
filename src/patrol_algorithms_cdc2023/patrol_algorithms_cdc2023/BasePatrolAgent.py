@@ -4,7 +4,9 @@ from rclpy.node import Node
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+import time
 
+from lifecycle_msgs.srv import GetState
 from nav_msgs.msg import Odometry
 from nav2_msgs.action import NavigateToPose
 from patrolling_sim_interfaces.msg import AgentTelemetry
@@ -93,7 +95,11 @@ class BasePatrolAgent(Node):
 
         # Wait for resources.
         self.acNav2Pose.wait_for_server()
-
+        self._waitForNodeToActivate("bt_navigator")
+        self._waitForNodeToActivate("amcl")
+        while rclpy.ok() and not self.tfBuffer.can_transform("map", "base_link", rclpy.time.Time()):
+            rclpy.spin_once(self)
+        
 
         # Setup is complete.
         self.get_logger().info("Initialization complete.")
@@ -203,7 +209,7 @@ class BasePatrolAgent(Node):
         self.get_logger().info("Navigation goal accepted.")
 
         self.futureNav2PoseResult = goal_handle.get_result_async()
-        self.futureNav2PoseResult.add_done_callback(self.onGoal)
+        self.futureNav2PoseResult.add_done_callback(self.onNav2PoseResult)
 
     def onNav2PoseResult(self, future):
         ''' Called when navigation has completed. '''
@@ -217,6 +223,8 @@ class BasePatrolAgent(Node):
         node = self.getNextNode()
         position = self.graph.getNodePosition(node)
         
+        self.get_logger().info(f"Requesting navigation goal for {position}.")
+
         goal = NavigateToPose.Goal()
         goal.pose.header.frame_id = "map"
         goal.pose.header.stamp = self.get_clock().now().to_msg()
@@ -226,6 +234,7 @@ class BasePatrolAgent(Node):
         goal.pose.pose.orientation.y = 0.0
         goal.pose.pose.orientation.z = 0.0
         goal.pose.pose.orientation.w = 1.0
+        goal.behavior_tree = ""
         
         self.futureNav2PoseGoal = self.acNav2Pose.send_goal_async(goal)
         self.futureNav2PoseGoal.add_done_callback(self.onNav2PoseGoalResponse)
@@ -235,6 +244,26 @@ class BasePatrolAgent(Node):
             This should be implemented by subclasses.'''
 
         raise NotImplementedError("Override this in your own subclass.")
+
+    def _waitForNodeToActivate(self, node_name):
+        # Waits for the node within the tester namespace to become active
+        self.get_logger().debug(f'Waiting for {node_name} to become active..')
+        node_service = f'{node_name}/get_state'
+        state_client = self.create_client(GetState, node_service)
+        while not state_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().debug(f'{node_service} service not available, waiting...')
+
+        req = GetState.Request()
+        state = 'unknown'
+        while state != 'active':
+            self.get_logger().debug(f'Getting {node_name} state...')
+            future = state_client.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+            if future.result() is not None:
+                state = future.result().current_state.label
+                self.get_logger().debug(f'Result of get_state: {state}')
+            time.sleep(2)
+        return
 
 
 def main(args=None):

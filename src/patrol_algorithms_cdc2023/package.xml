@@ -11,6 +11,7 @@
   <depend>rclpy</depend>
   <depend>numpy</depend>
   <depend>networkx</depend>
+  <depend>lifecycle_msgs</depend>
   <depend>patrolling_sim_interfaces</depend>
   <depend>nav_msgs</depend>
   <depend>nav2_msgs</depend>

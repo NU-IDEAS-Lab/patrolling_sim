@@ -13,7 +13,7 @@ class AhpaAgent(BasePatrolAgent):
         # Set the allocation.
         cell = self.getNodeAllocation(self.agentOrigins)
         self.nodes = self.getNodeOrder(cell)
-        self.currentNodeIdx = 0
+        self.currentNodeIdx = 1
 
         self.get_logger().info(f"Patrol order: {self.nodes}")
 
