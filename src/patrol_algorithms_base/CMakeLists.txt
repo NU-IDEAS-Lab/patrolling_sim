@@ -119,6 +119,12 @@ install(
   INCLUDES DESTINATION include
 )
 
+# Install include files.
+install(
+  DIRECTORY include/patrol_algorithms_base
+  DESTINATION include
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
