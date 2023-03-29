@@ -369,7 +369,7 @@ class PatrolMonitor : public rclcpp::Node
         timer = this->create_wall_timer(loop_rate.period(), std::bind(&PatrolMonitor::run_once, this));
     }
 
-
+    bool attritionPerformed = false;
     void run_once()
     {
         dolog("main loop - begin");
@@ -380,6 +380,14 @@ class PatrolMonitor : public rclcpp::Node
             // check time
             double report_time = this->get_clock()->now().seconds();
             
+            // agent attrition
+            // if(!this->attritionPerformed && report_time - time_zero >= 10.0)
+            // {
+            //     RCLCPP_WARN(this->get_logger(), "Killing robot %d!", 0);
+            //     this->removeRobot(0);
+            //     this->attritionPerformed = true;
+            // }
+
             // RCLCPP_INFO(this->get_logger(), "### report time=%.1f  last_report_time=%.1f diff = %.1f\n",report_time, last_report_time, report_time - last_report_time);
             
             // write results every TIMEOUT_WRITE_RESULTS_(FOREVER) seconds anyway
@@ -541,6 +549,16 @@ class PatrolMonitor : public rclcpp::Node
         } // if ! initialize  
         
         dolog("main loop - end");
+    }
+
+    void removeRobot(int idx)
+    {
+        std_msgs::msg::Int16MultiArray msg;
+        msg.data.clear();
+        msg.data.push_back(-1);
+        msg.data.push_back(AGENT_ATTRITION_MSG_TYPE);
+        msg.data.push_back(idx);
+        results_pub->publish(msg);
     }
 
     void on_experiment_end()

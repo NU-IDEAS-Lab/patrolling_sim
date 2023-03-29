@@ -11,17 +11,18 @@ class AhpaAgent(BasePatrolAgent):
         self.get_logger().info(f"AHPA agent {self.id} has origin {self.agentOrigins[self.id]}.")
 
         # Set the allocation.
-        cell = self.getNodeAllocation(self.agentOrigins)
+        self.voronoiOrigins = self.agentOrigins.copy()
+        cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
         self.nodes = self.getNodeOrder(cell)
         self.currentNodeIdx = 1
 
         self.get_logger().info(f"Patrol order: {self.nodes}")
 
-    def getNodeAllocation(self, origins):
+    def getNodeAllocation(self, origins, originalOrigins):
         ''' Returns the Voronoi partitions based on the origins provided. '''
 
         cells = nx.algorithms.voronoi.voronoi_cells(self.graph.graph, origins)
-        return cells[origins[self.id]]
+        return cells[originalOrigins[self.id]]
 
     def getNodeOrder(self, nodes):
         ''' Returns the visitation order for the provided nodes. '''
@@ -40,6 +41,22 @@ class AhpaAgent(BasePatrolAgent):
         node = self.nodes[self.currentNodeIdx]
         self.currentNodeIdx += 1
         return node
+    
+    def onAgentAttrition(self, agent):
+        ''' Called when an agent is lost. '''
+
+        super().onAgentAttrition(agent)
+        if agent == self.id:
+            return
+
+        # Update the Voronoi partitions.
+        del self.voronoiOrigins[agent]
+        cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
+        old = self.nodes
+        self.nodes = self.getNodeOrder(cell)
+
+        if old != self.nodes:
+            self.get_logger().info(f"Updated allocation!\nOld patrol route: {old}\nNew patrol route: {self.nodes}")
 
 
 def main(args=None):

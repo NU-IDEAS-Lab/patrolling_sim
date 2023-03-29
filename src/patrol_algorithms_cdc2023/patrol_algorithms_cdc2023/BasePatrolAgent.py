@@ -1,3 +1,4 @@
+import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
@@ -19,7 +20,8 @@ class BasePatrolAgent(Node):
     MSG_TYPES = {
         "INITIALIZE_MSG_TYPE": 10,
         "TARGET_REACHED_MSG_TYPE": 11,
-        "INTERFERENCE_MSG_TYPE": 12
+        "INTERFERENCE_MSG_TYPE": 12,
+        "AGENT_ATTRITION_MSG_TYPE": 13
     }
 
     def __init__(self):
@@ -150,9 +152,20 @@ class BasePatrolAgent(Node):
 
         sender = msg.data[0]
         msgType = msg.data[1]
-        if sender == -1 and msgType == self.MSG_TYPES["INITIALIZE_MSG_TYPE"]:
-            if not self.experimentInitialized:
-                self.onExperimentInitialized()
+        if sender == -1:
+            if msgType == self.MSG_TYPES["INITIALIZE_MSG_TYPE"]:
+                if not self.experimentInitialized:
+                    self.onExperimentInitialized()
+            elif msgType == self.MSG_TYPES["AGENT_ATTRITION_MSG_TYPE"]:
+                agentIdx = msg.data[2]
+
+                if agentIdx == self.id:
+                    # Shut ourselves down.
+                    self.get_logger().info(f"Shutting down agent {self.id}")
+                    os.system(f"pkill -2 -f '__ns:=/agent{self.id}'")
+                else:
+                    # Handle someone else's shutdown.
+                    self.onAgentAttrition(agentIdx)
 
     def onReceiveOdometry(self, msg):
         ''' Called when odometry information is received.
@@ -198,6 +211,9 @@ class BasePatrolAgent(Node):
         msg.odom.pose.pose.position.x = self.agentPositions[self.id][0]
         msg.odom.pose.pose.position.y = self.agentPositions[self.id][1]
         self.pubTelemetry.publish(msg)
+
+    def onAgentAttrition(self, agent):
+        pass
 
     def onNav2PoseGoalResponse(self, future):
         ''' Called when the action server responds to our request. '''
