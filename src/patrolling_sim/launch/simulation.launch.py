@@ -53,21 +53,21 @@ def generate_launch_description():
         ),
 
         # Launch the simulation base.
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource([
-        #         PathJoinSubstitution([
-        #             FindPackageShare('simulation_base'),
-        #             'launch',
-        #             'mas_simulation.launch.py'
-        #         ])
-        #     ]),
-        #     launch_arguments={
-        #         "use_agents": "false",
-        #         "use_rviz": LaunchConfiguration("use_rviz"),
-        #         "map": LaunchConfiguration("map"),
-        #         "gazebo_world_file": [FindPackageShare("simulation_base"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"]
-        #     }.items()
-        # ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                PathJoinSubstitution([
+                    FindPackageShare('simulation_base'),
+                    'launch',
+                    'mas_simulation.launch.py'
+                ])
+            ]),
+            launch_arguments={
+                "use_agents": "false",
+                "use_rviz": LaunchConfiguration("use_rviz"),
+                "map": LaunchConfiguration("map"),
+                "gazebo_world_file": [FindPackageShare("simulation_base"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"]
+            }.items()
+        ),
 
         # Set parameters from file.
         SetParametersFromFile(LaunchConfiguration("params_file")),
@@ -95,12 +95,12 @@ def generate_launch_description():
         ),
 
         # Monitor/control node.
-        # Node(
-        #     package="monitoring_control",
-        #     executable="monitor",
-        #     name="monitor",
-        #     exec_name="monitor"
-        # ),
+        Node(
+            package="monitoring_control",
+            executable="monitor",
+            name="monitor",
+            exec_name="monitor"
+        ),
     ])
 
 
@@ -159,23 +159,23 @@ def generate_agents(context: LaunchContext, agent_count_subst, map_subst):
                     ),
 
                     # Launch the actual robot (copied from simulation_base)
-                    # IncludeLaunchDescription(
-                    #     PythonLaunchDescriptionSource([
-                    #         PathJoinSubstitution([
-                    #             FindPackageShare('simulation_base'),
-                    #             'launch',
-                    #             'robot.launch.py'
-                    #         ])
-                    #     ]),
-                    #     launch_arguments={
-                    #         "id": str(agent),
-                    #         "name": "agent" + str(agent),
-                    #         "use_rviz": LaunchConfiguration("use_rviz"),
-                    #         "map": LaunchConfiguration("map"),
-                    #         "pose_x": str(initPoses[agent * 2]),
-                    #         "pose_y": str(initPoses[agent * 2 + 1]),
-                    #     }.items()
-                    # )
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource([
+                            PathJoinSubstitution([
+                                FindPackageShare('simulation_base'),
+                                'launch',
+                                'robot.launch.py'
+                            ])
+                        ]),
+                        launch_arguments={
+                            "id": str(agent),
+                            "name": "agent" + str(agent),
+                            "use_rviz": LaunchConfiguration("use_rviz"),
+                            "map": LaunchConfiguration("map"),
+                            "pose_x": str(initPoses[agent * 2]),
+                            "pose_y": str(initPoses[agent * 2 + 1]),
+                        }.items()
+                    )
                 ]
             )
         ]

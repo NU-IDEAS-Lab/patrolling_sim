@@ -37,12 +37,12 @@ class PatrolGraph():
                     direction = str(file.readline()) # not useful!
                     cost = int(file.readline())
                     self.graph.add_edge(i, j, weight = cost)
-    
-    def getVoronoiPartitions(self, origins):
-        ''' Returns the Voronoi partitions based on the origins provided. '''
 
-        return nx.algorithms.voronoi.voronoi_cells(self.graph, origins)
-    
+    def getNodePosition(self, node):
+        ''' Returns the node position as a tuple (x, y). '''
+
+        return self.graph.nodes[node]["pos"]
+
     def getOriginsFromInitialPoses(self, initialPoses):
         ''' Given (x,y) initial positions, returns the nearest node for each position.
             This is a horrible n^2 algorithm but that's fine for now. '''

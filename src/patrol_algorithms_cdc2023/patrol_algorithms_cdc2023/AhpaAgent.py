@@ -1,3 +1,4 @@
+import networkx as nx
 import rclpy
 
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
@@ -7,8 +8,38 @@ class AhpaAgent(BasePatrolAgent):
     def __init__(self):
         super().__init__()
 
-        self.get_logger().info(f"My origin: {self.agentOrigins[self.id]}, All origins: {self.agentOrigins}")
-        self.get_logger().info(f"My Voronoi cell: {self.graph.getVoronoiPartitions(self.agentOrigins)[self.agentOrigins[self.id]]}")
+        self.get_logger().info(f"AHPA agent {self.id} has origin {self.agentOrigins[self.id]}.")
+
+        # Set the allocation.
+        cell = self.getNodeAllocation(self.agentOrigins)
+        self.nodes = self.getNodeOrder(cell)
+        self.currentNodeIdx = 0
+
+        self.get_logger().info(f"Patrol order: {self.nodes}")
+
+    def getNodeAllocation(self, origins):
+        ''' Returns the Voronoi partitions based on the origins provided. '''
+
+        cells = nx.algorithms.voronoi.voronoi_cells(self.graph.graph, origins)
+        return cells[origins[self.id]]
+
+    def getNodeOrder(self, nodes):
+        ''' Returns the visitation order for the provided nodes. '''
+
+        return nx.algorithms.approximation.traveling_salesman_problem(
+            self.graph.graph,
+            nodes=nodes,
+            method=nx.algorithms.approximation.greedy_tsp
+        )
+    
+    def getNextNode(self):
+        ''' Returns the next node to visit. '''
+
+        if self.currentNodeIdx >= len(self.nodes) - 1:
+            self.currentNodeIdx = 0
+        node = self.nodes[self.currentNodeIdx]
+        self.currentNodeIdx += 1
+        return node
 
 
 def main(args=None):

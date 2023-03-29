@@ -1,13 +1,24 @@
 import rclpy
+from rclpy.action import ActionClient
 from rclpy.node import Node
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
 
-from patrolling_sim_interfaces.msg import AgentTelemetry
 from nav_msgs.msg import Odometry
+from nav2_msgs.action import NavigateToPose
+from patrolling_sim_interfaces.msg import AgentTelemetry
 from std_msgs.msg import Int16MultiArray
 
 from patrol_algorithms_cdc2023.PatrolGraph import PatrolGraph
 
 class BasePatrolAgent(Node):
+    MSG_TYPES = {
+        "INITIALIZE_MSG_TYPE": 10,
+        "TARGET_REACHED_MSG_TYPE": 11,
+        "INTERFERENCE_MSG_TYPE": 12
+    }
+
     def __init__(self):
         super().__init__("PatrolAgent")
         
@@ -29,9 +40,10 @@ class BasePatrolAgent(Node):
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.id = self.get_parameter("id_robot").get_parameter_value().integer_value
 
-        self.get_logger().info(f"My ID: {self.id}")
+        self.get_logger().info(f"Initializing patrol agent {self.id}.")
 
-        self.get_logger().info(f"My initial pose: ({self.initialPoses[self.id * 2]}, {self.initialPoses[self.id * 2 + 1]}), All initial poses: {self.initialPoses}")
+        # Variables.
+        self.experimentInitialized = False
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -39,6 +51,8 @@ class BasePatrolAgent(Node):
         self.agentPositions = [(0.0, 0.0) for a in range(self.agent_count)]
 
         # Subscribers.
+        self.tfBuffer = Buffer()
+        self.tfListener = TransformListener(self.tfBuffer, self)
         self.subTelemetry = self.create_subscription(
             AgentTelemetry,
             "/positions",
@@ -59,11 +73,107 @@ class BasePatrolAgent(Node):
         )
 
         # Publishers.
+        self.pubTelemetry = self.create_publisher(
+            AgentTelemetry,
+            "/positions",
+            100
+        )
+        self.pubResults = self.create_publisher(
+            Int16MultiArray,
+            "/results",
+            100
+        )
 
-    # def onReceiveOdometry(self, msg):
-    #     self.agentPositions[self.id] = (
+        # Action clients.
+        self.acNav2Pose = ActionClient(self,
+            NavigateToPose,
+            'navigate_to_pose'
+        )
 
-    #     )
+
+        # Wait for resources.
+        self.acNav2Pose.wait_for_server()
+
+
+        # Setup is complete.
+        self.get_logger().info("Initialization complete.")
+    
+        # Timers.
+        # These begin executing immediately.
+        self.timerSendTelemetry = self.create_timer(
+            1.0, # period (seconds)
+            self.onTimerSendTelemetry
+        )
+        self.timerAdvertizeReady = self.create_timer(
+            1.0, # period (seconds)
+            self.onTimerAdvertizeReady
+        )
+
+
+    def onExperimentInitialized(self):
+        ''' Begins execution after experiment initialization completes. '''
+
+        self.experimentInitialized = True
+        self.get_logger().info("Let's Patrol!")
+
+        self.goToNextNode()
+
+
+    def onTimerAdvertizeReady(self):
+        ''' Initializes the node and communicates with controller.
+            Part of the experiment setup process. Waits for
+            experiment initialization. '''
+        
+        if self.experimentInitialized:
+            # Stop advertizing after for initialization.
+            self.timerAdvertizeReady.cancel()
+        else:
+            # Send advertizement.
+            msg = Int16MultiArray()
+            msg.data = [
+                self.id,
+                self.MSG_TYPES['INITIALIZE_MSG_TYPE'],
+                1
+            ]
+            self.pubResults.publish(msg)
+
+
+    def onReceiveResults(self, msg):
+        ''' Called when results are received. '''
+
+        sender = msg.data[0]
+        msgType = msg.data[1]
+        if sender == -1 and msgType == self.MSG_TYPES["INITIALIZE_MSG_TYPE"]:
+            if not self.experimentInitialized:
+                self.onExperimentInitialized()
+
+    def onReceiveOdometry(self, msg):
+        ''' Called when odometry information is received.
+            Use this for positioning if simulation has no error. '''
+
+        self.agentPositions[self.id] = (
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y
+        )
+    
+    def onTimerGetPosition(self):
+        ''' Called periodically to look up current position. '''
+
+        raise NotImplementedError()
+        try:
+            t = self.tfBuffer.lookupTransform(
+                "base_link",
+                "map",
+                rclpy.time.Time()
+            )
+        except TransformException as e:
+            self.get_logger().error(f"Could not look up transformation between map and base_link.")
+            return
+        
+        self.agentPositions[self.id] = (
+            t.transform.translation.x,
+            t.transform.translation.y
+        )
 
     def onReceiveTelemetry(self, msg):
         if msg.sender != self.id:
@@ -72,10 +182,59 @@ class BasePatrolAgent(Node):
                 msg.odom.pose.pose.position.y
             )
     
-    def onTimerSendTelemetry(self, event):
+    def onTimerSendTelemetry(self):
+        ''' Periodically sends agent telemetry. '''
+
         msg = AgentTelemetry()
         msg.sender = self.id
-        raise NotImplementedError()
+        msg.odom.header.frame_id = f"agent{self.id}/map"
+        msg.odom.pose.pose.position.x = self.agentPositions[self.id][0]
+        msg.odom.pose.pose.position.y = self.agentPositions[self.id][1]
+        self.pubTelemetry.publish(msg)
+
+    def onNav2PoseGoalResponse(self, future):
+        ''' Called when the action server responds to our request. '''
+
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error("Navigation goal rejected! Something is very wrong.")
+            return
+
+        self.get_logger().info("Navigation goal accepted.")
+
+        self.futureNav2PoseResult = goal_handle.get_result_async()
+        self.futureNav2PoseResult.add_done_callback(self.onGoal)
+
+    def onNav2PoseResult(self, future):
+        ''' Called when navigation has completed. '''
+
+        result = future.result().result
+        self.get_logger().info('Result: {0}'.format(result))
+    
+    def goToNextNode(self):
+        ''' Orders the agent to proceed to the next node. '''
+
+        node = self.getNextNode()
+        position = self.graph.getNodePosition(node)
+        
+        goal = NavigateToPose.Goal()
+        goal.pose.header.frame_id = "map"
+        goal.pose.header.stamp = self.get_clock().now().to_msg()
+        goal.pose.pose.position.x = float(position[0])
+        goal.pose.pose.position.y = float(position[1])
+        goal.pose.pose.orientation.x = 0.0
+        goal.pose.pose.orientation.y = 0.0
+        goal.pose.pose.orientation.z = 0.0
+        goal.pose.pose.orientation.w = 1.0
+        
+        self.futureNav2PoseGoal = self.acNav2Pose.send_goal_async(goal)
+        self.futureNav2PoseGoal.add_done_callback(self.onNav2PoseGoalResponse)
+
+    def getNextNode(self):
+        ''' Called to determine which node the agent should travel to next.
+            This should be implemented by subclasses.'''
+
+        raise NotImplementedError("Override this in your own subclass.")
 
 
 def main(args=None):
