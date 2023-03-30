@@ -154,6 +154,7 @@ class MonitorNode(Node):
             )
         if len(self.attritionTimes) > 0:
             duration = (self.timeStart + rclpy.duration.Duration(seconds=self.attritionTimes[0])) - self.get_clock().now()
+            duration = duration.nanoseconds / 1.0e9
             self.timerAttrition = self.create_timer(
                 duration, # period (seconds)
                 self.onTimerAttrition
@@ -212,6 +213,7 @@ class MonitorNode(Node):
         self.timerAttrition = None
         if len(self.attritionTimes) > 0:
             duration = (self.timeStart + rclpy.duration.Duration(seconds=self.attritionTimes[0])) - self.get_clock().now()
+            duration = duration.nanoseconds / 1.0e9
             self.timerAttrition = self.create_timer(
                 duration, # period (seconds)
                 self.onTimerAttrition
