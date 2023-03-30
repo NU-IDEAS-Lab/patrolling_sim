@@ -204,7 +204,7 @@ class MonitorNode(Node):
 
         del self.attritionTimes[0]
 
-        agent = random.sample(list(self.agentsRemaining))
+        agent = random.sample(list(self.agentsRemaining), 1)
         self.agentsRemaining -= {agent}
 
         self.perfromAgentAttrition(agent)
