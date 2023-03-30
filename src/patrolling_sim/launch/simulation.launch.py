@@ -49,6 +49,12 @@ def generate_launch_description():
             'runtime', default_value='0'
         ),
         DeclareLaunchArgument(
+            'output', default_value='./results.zarr'
+        ),
+        DeclareLaunchArgument(
+            'attrition_times', default_value='[]'
+        ),
+        DeclareLaunchArgument(
             'params_file',
             default_value=PathJoinSubstitution([
                 FindPackageShare('patrolling_sim'),
@@ -88,6 +94,8 @@ def generate_launch_description():
         SetParameter(name="agent_count", value=LaunchConfiguration("agent_count")),
         SetParameter(name="algorithm_name", value=LaunchConfiguration("algorithm_name")),
         SetParameter(name="map", value=LaunchConfiguration("map")),
+        SetParameter(name="output_file", value=LaunchConfiguration("output")),
+        SetParameter(name="attrition_times", value=LaunchConfiguration("attrition_times")),
         SetParameter(
             name="patrol_graph_file",
             value=[

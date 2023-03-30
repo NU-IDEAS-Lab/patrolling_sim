@@ -8,6 +8,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 import time
+import random
 import zarr
 
 from patrolling_sim_interfaces.msg import AgentTelemetry
@@ -30,17 +31,23 @@ class MonitorNode(Node):
         self.declare_parameter("algorithm_name", "Random")
         self.declare_parameter("map", "cumberland")
         self.declare_parameter("patrol_graph_file", "/home/anthony/dev/patrolling_sim/src/patrolling_sim/models/maps/cumberland/cumberland.graph")
+        self.declare_parameter("output_file", "./results.zarr")
         self.declare_parameter("initial_poses", [0.0, 0.0])
+        self.declare_parameter("attrition_times", [])
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
         self.algorithm = self.get_parameter("algorithm_name").get_parameter_value().string_value
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
+        self.outputFilePath = self.get_parameter("output_file").get_parameter_value().string_value
         self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
+        self.attritionTimes = self.get_parameter("attrition_times").get_parameter_value().double_array_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
 
         self.get_logger().info(f"Initializing monitor for {self.agent_count} agents on map {self.map}.")
+
+        random.seed(42)
 
         # Variables.
         self.experimentInitialized = False
@@ -49,6 +56,8 @@ class MonitorNode(Node):
         self.visitAgents = []
         self.visitNodes = []
         self.commsTimes = []
+        self.attritionList = []
+        self.agentsRemaining = set(range(self.agent_count))
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -56,7 +65,7 @@ class MonitorNode(Node):
         self.agentPositions = [(0.0, 0.0) for a in range(self.agent_count)]
 
         # Data storage.
-        self.zarrRoot = zarr.open("./results.zarr", mode="a")
+        self.zarrRoot = zarr.open(self.outputFilePath, mode="a")
         self.zarrRoot2 = self.zarrRoot.require_group(
             f"{self.map}_{self.agent_count}"
         ).require_group(
@@ -112,6 +121,7 @@ class MonitorNode(Node):
         self.zarrData["visits"]["agent"] = self.visitAgents
         self.zarrData["visits"]["node"] = self.visitNodes
         self.zarrData["comm_times"] = self.commsTimes
+        self.zarrData["attrition_times"] = self.attritionList
 
         timeElapsed = self.get_clock().now() - self.timeStart
         self.zarrData["runtime_actual"] = [timeElapsed.nanoseconds]
@@ -136,6 +146,12 @@ class MonitorNode(Node):
             self.timerStopSim = self.create_timer(
                 float(self.runtime), # period (seconds)
                 self.onTimerStopSim
+            )
+        if len(self.attritionTimes) > 0:
+            duration = float(self.attritionTimes[0]) - self.get_clock().now()
+            self.timerAttrition = self.create_timer(
+                duration, # period (seconds)
+                self.onTimerAttrition
             )
 
 
@@ -176,6 +192,34 @@ class MonitorNode(Node):
 
         self.get_logger().warn(f"Simulation completed after {self.runtime}s. Shutting down.")
         raise KeyboardInterrupt()
+    
+    def onTimerAttrition(self):
+        ''' Kills agent after time limit. '''
+
+        del self.attritionTimes[0]
+
+        agent = random.sample(list(self.agentsRemaining))
+        self.agentsRemaining -= {agent}
+
+        self.perfromAgentAttrition(agent)
+
+        self.timerAttrition.cancel()
+        self.timerAttrition = None
+        if len(self.attritionTimes) > 0:
+            duration = float(self.attritionTimes[0]) - self.get_clock().now()
+            self.timerAttrition = self.create_timer(
+                duration, # period (seconds)
+                self.onTimerAttrition
+            )
+
+
+    def perfromAgentAttrition(self, agent):
+        self.get_logger().warn(f"Performing attrition on agent {agent}.")
+        os.system(f"pkill -2 -f '__ns:=/agent{agent}'")
+
+        timeElapsed = self.get_clock().now() - self.timeStart
+        self.attritionList.append([timeElapsed.nanoseconds, agent])
+
 
     def waitForAgents(self):
         ''' Blocks until all agents report ready. '''
