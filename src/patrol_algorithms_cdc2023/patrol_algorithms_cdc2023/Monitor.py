@@ -48,6 +48,7 @@ class MonitorNode(Node):
         self.visitTimes = []
         self.visitAgents = []
         self.visitNodes = []
+        self.commsTimes = []
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -64,9 +65,10 @@ class MonitorNode(Node):
         self.zarrData = self.zarrRoot2.require_group(
             f"run_{len(self.zarrRoot2) + 1}"
         )
-        self.zarrData["datetime"] = f"{datetime.datetime.now().isoformat()}"
+        self.zarrData["datetime"] = [f"{datetime.datetime.now().isoformat()}"]
         self.zarrData["graph"] = nx.to_numpy_array(self.graph.graph)
         self.zarrData["origins"] = self.agentOrigins
+        self.zarrData["runtime_requested"] = [self.runtime]
         self.zarrData.require_group("visits")
 
         # Subscribers.
@@ -109,15 +111,20 @@ class MonitorNode(Node):
         self.zarrData["visits"]["time_ns"] = self.visitTimes
         self.zarrData["visits"]["agent"] = self.visitAgents
         self.zarrData["visits"]["node"] = self.visitNodes
+        self.zarrData["comm_times"] = self.commsTimes
+
+        timeElapsed = self.get_clock().now() - self.timeStart
+        self.zarrData["runtime_actual"] = [timeElapsed.nanoseconds]
+
 
 
     def onExperimentInitialized(self):
         ''' Begins execution after experiment initialization completes. '''
 
+        self.timeStart = self.get_clock().now()
         self.experimentInitialized = True
         self.get_logger().info("Initialization complete.")
 
-        self.timeStart = self.get_clock().now()
 
         # Notify agents that we are ready.
         msg = Int16MultiArray()
@@ -143,6 +150,11 @@ class MonitorNode(Node):
 
             elif msgType == self.MSG_TYPES["TARGET_REACHED_MSG_TYPE"]:
                 self.onAgentReachedNode(sender, msg.data[2])
+            
+            elif self.experimentInitialized and msgType >= 20:
+                # count the algorithm messages.
+                timeElapsed = self.get_clock().now() - self.timeStart
+                self.commsTimes.append(timeElapsed.nanoseconds)
 
 
     def onReceiveTelemetry(self, msg):
