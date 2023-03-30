@@ -52,7 +52,7 @@ def generate_launch_description():
             'output', default_value='./results.zarr'
         ),
         DeclareLaunchArgument(
-            'attrition_times', default_value='[]'
+            'attrition_times', default_value=''
         ),
         DeclareLaunchArgument(
             'params_file',
