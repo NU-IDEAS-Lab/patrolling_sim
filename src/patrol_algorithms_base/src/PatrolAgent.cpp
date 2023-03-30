@@ -587,8 +587,8 @@ void PatrolAgent::goalDoneCallback(const ActionGoalHandleNav2Pose::WrappedResult
             //RCLCPP_INFO(this->get_logger(), "Backup");
             // backup();
 
-            RCLCPP_INFO(this->get_logger(), "Clear costmap!");
-            this->clearLocalCostmap(false);
+            // RCLCPP_INFO(this->get_logger(), "Clear costmap!");
+            // this->clearLocalCostmap(false);
 
             RCLCPP_INFO(this->get_logger(), "Resend Goal!");
             ResendGoal = true;

@@ -72,12 +72,12 @@ class MonitorNode(Node):
         # Subscribers.
         self.tfBuffer = Buffer()
         self.tfListener = TransformListener(self.tfBuffer, self)
-        self.subTelemetry = self.create_subscription(
-            AgentTelemetry,
-            "/positions",
-            self.onReceiveTelemetry,
-            100
-        )
+        # self.subTelemetry = self.create_subscription(
+        #     AgentTelemetry,
+        #     "/positions",
+        #     self.onReceiveTelemetry,
+        #     100
+        # )
         self.subResults = self.create_subscription(
             Int16MultiArray,
             "/results",
@@ -86,11 +86,11 @@ class MonitorNode(Node):
         )
 
         # Publishers.
-        self.pubTelemetry = self.create_publisher(
-            AgentTelemetry,
-            "/positions",
-            100
-        )
+        # self.pubTelemetry = self.create_publisher(
+        #     AgentTelemetry,
+        #     "/positions",
+        #     100
+        # )
         self.pubResults = self.create_publisher(
             Int16MultiArray,
             "/results",
