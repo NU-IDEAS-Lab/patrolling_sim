@@ -153,7 +153,7 @@ class MonitorNode(Node):
                 self.onTimerStopSim
             )
         if len(self.attritionTimes) > 0:
-            duration = rclpy.duration.Duration(seconds=self.attritionTimes[0]) - self.get_clock().now()
+            duration = (self.timeStart + rclpy.duration.Duration(seconds=self.attritionTimes[0])) - self.get_clock().now()
             self.timerAttrition = self.create_timer(
                 duration, # period (seconds)
                 self.onTimerAttrition
@@ -211,7 +211,7 @@ class MonitorNode(Node):
         self.timerAttrition.cancel()
         self.timerAttrition = None
         if len(self.attritionTimes) > 0:
-            duration = rclpy.duration.Duration(seconds=self.attritionTimes[0]) - self.get_clock().now()
+            duration = (self.timeStart + rclpy.duration.Duration(seconds=self.attritionTimes[0])) - self.get_clock().now()
             self.timerAttrition = self.create_timer(
                 duration, # period (seconds)
                 self.onTimerAttrition
