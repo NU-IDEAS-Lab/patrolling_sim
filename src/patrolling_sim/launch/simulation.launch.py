@@ -20,6 +20,14 @@ import configparser
 def generate_launch_description():
     ''' Generates the overall launch description. '''
 
+    startMonitorAction = Node(
+        # package="monitoring_control",
+        package="patrol_algorithms_cdc2023",
+        executable="monitor",
+        name="monitor",
+        exec_name="monitor"
+    )
+
     return LaunchDescription([
         # Arguments.
         DeclareLaunchArgument(
@@ -36,6 +44,9 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'algorithm_name', default_value='Random'
+        ),
+        DeclareLaunchArgument(
+            'runtime', default_value='0'
         ),
         DeclareLaunchArgument(
             'params_file',
@@ -73,6 +84,7 @@ def generate_launch_description():
         SetParametersFromFile(LaunchConfiguration("params_file")),
 
         # Set override parameters.
+        SetParameter(name="runtime", value=LaunchConfiguration("runtime")),
         SetParameter(name="agent_count", value=LaunchConfiguration("agent_count")),
         SetParameter(name="algorithm_name", value=LaunchConfiguration("algorithm_name")),
         SetParameter(name="map", value=LaunchConfiguration("map")),
@@ -95,13 +107,13 @@ def generate_launch_description():
         ),
 
         # Monitor/control node.
-        Node(
-            # package="monitoring_control",
-            package="patrol_algorithms_cdc2023",
-            executable="monitor",
-            name="monitor",
-            exec_name="monitor"
-        ),
+        startMonitorAction,
+
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+            target_action=startMonitorAction,
+            on_exit=EmitEvent(event=Shutdown(reason='monitor stopped')))
+        )
     ])
 
 

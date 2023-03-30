@@ -32,11 +32,13 @@ class MonitorNode(Node):
         self.declare_parameter("patrol_graph_file", "/home/anthony/dev/patrolling_sim/src/patrolling_sim/models/maps/cumberland/cumberland.graph")
         self.declare_parameter("initial_poses", [0.0, 0.0])
         self.declare_parameter("agent_count", 1)
+        self.declare_parameter("runtime", 0)
         self.algorithm = self.get_parameter("algorithm_name").get_parameter_value().string_value
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
         self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
+        self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
 
         self.get_logger().info(f"Initializing monitor for {self.agent_count} agents on map {self.map}.")
 
@@ -64,6 +66,7 @@ class MonitorNode(Node):
         )
         self.zarrData["datetime"] = f"{datetime.datetime.now().isoformat()}"
         self.zarrData["graph"] = nx.to_numpy_array(self.graph.graph)
+        self.zarrData["origins"] = self.agentOrigins
         self.zarrData.require_group("visits")
 
         # Subscribers.
@@ -121,6 +124,13 @@ class MonitorNode(Node):
         msg.data = [-1, self.MSG_TYPES["INITIALIZE_MSG_TYPE"], 100]
         self.pubResults.publish(msg)
 
+        # Start timer.
+        if self.runtime > 0:
+            self.timerStopSim = self.create_timer(
+                float(self.runtime), # period (seconds)
+                self.onTimerStopSim
+            )
+
 
     def onReceiveResults(self, msg):
         ''' Called when results are received. '''
@@ -148,6 +158,12 @@ class MonitorNode(Node):
         self.visitTimes.append(timeElapsed.nanoseconds)
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
+    
+    def onTimerStopSim(self):
+        ''' Stops the sim after time limit. '''
+
+        self.get_logger().warn(f"Simulation completed after {self.runtime}s. Shutting down.")
+        raise KeyboardInterrupt()
 
     def waitForAgents(self):
         ''' Blocks until all agents report ready. '''
@@ -169,8 +185,6 @@ def main(args=None):
     finally:
         monitor.writeData()
 
-    # Destroy the node explicitly.
-    monitor.destroy_node()
     rclpy.shutdown()
 if __name__ == '__main__':
     main()
