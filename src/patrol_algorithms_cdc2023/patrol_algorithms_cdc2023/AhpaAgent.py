@@ -27,6 +27,9 @@ class AhpaAgent(BasePatrolAgent):
     def getNodeOrder(self, nodes):
         ''' Returns the visitation order for the provided nodes. '''
 
+        if len(nodes) <= 1:
+            return list(nodes)
+
         return nx.algorithms.approximation.traveling_salesman_problem(
             self.graph.graph,
             nodes=nodes,

@@ -96,7 +96,8 @@ def generate_launch_description():
 
         # Monitor/control node.
         Node(
-            package="monitoring_control",
+            # package="monitoring_control",
+            package="patrol_algorithms_cdc2023",
             executable="monitor",
             name="monitor",
             exec_name="monitor"
