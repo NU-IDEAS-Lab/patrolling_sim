@@ -173,10 +173,10 @@ class MonitorNode(Node):
             elif msgType == self.MSG_TYPES["TARGET_REACHED_MSG_TYPE"]:
                 self.onAgentReachedNode(sender, msg.data[2])
             
-            elif self.experimentInitialized and msgType >= 20:
-                # count the algorithm messages.
-                timeElapsed = self.get_clock().now() - self.timeStart
-                self.commsTimes.append(timeElapsed.nanoseconds)
+        if self.experimentInitialized and msgType >= 13:
+            # count the algorithm messages.
+            timeElapsed = self.get_clock().now() - self.timeStart
+            self.commsTimes.append(timeElapsed.nanoseconds)
 
 
     def onReceiveTelemetry(self, msg):
