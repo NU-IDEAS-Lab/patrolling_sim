@@ -629,6 +629,9 @@ void PatrolAgent::send_goal_reached() {
 
 bool PatrolAgent::check_interference (int robot_id){ //verificar se os robots estao proximos
     
+    return false;
+
+
     int i;
     double dist_quad;
     
