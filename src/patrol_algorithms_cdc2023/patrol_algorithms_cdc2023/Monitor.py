@@ -45,9 +45,8 @@ class MonitorNode(Node):
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
 
-        if len(self.attritionTimes) > 0:
-            self.attritionTimes = [float(i) for i in self.attritionTimes.split(",")]
-        else:
+        self.attritionTimes = [float(i) for i in self.attritionTimes.split(",")]
+        if self.attritionTimes[0] < 0:
             self.attritionTimes = []
 
         self.get_logger().info(f"Initializing monitor for {self.agent_count} agents on map {self.map}.")
