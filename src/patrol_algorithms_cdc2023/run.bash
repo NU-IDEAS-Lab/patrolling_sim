@@ -11,8 +11,8 @@ ros2 doctor --report
 
 AGENTS=6
 RUNTIME=1800
-OUTPUT_FILE="$HOME/dev/patrolling_results/results_attrition.zarr"
-ATTRITION_TIMES=""
+OUTPUT_FILE="$HOME/idev/patrolling_results/results.zarr"
+ATTRITION_TIMES="-1.0,-1.0"
 
 for i in {1..3}; do
 
