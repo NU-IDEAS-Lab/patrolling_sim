@@ -224,6 +224,10 @@ class MonitorNode(Node):
         self.get_logger().warn(f"Performing attrition on agent {agent}.")
         os.system(f"pkill -2 -f '__ns:=/agent{agent}'")
 
+        msg = Int16MultiArray()
+        msg.data = [-1, self.MSG_TYPES["AGENT_ATTRITION_MSG_TYPE"], agent]
+        self.pubResults.publish(msg)
+
         timeElapsed = self.get_clock().now() - self.timeStart
         self.attritionList.append([timeElapsed.nanoseconds, agent])
 
