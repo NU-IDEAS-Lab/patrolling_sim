@@ -23,5 +23,3 @@ for i in {1..3}; do
     ros2 launch patrolling_sim simulation.launch.py algorithm_pkg:=patrol_algorithms_base algorithm_name:=GBS agent_count:=$AGENTS use_rviz:=false use_gzclient:=false runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES"
 
 done
-
-ros2 launch patrolling_sim simulation.launch.py algorithm_pkg:=patrol_algorithms_base algorithm_name:=CBLS agent_count:=6 use_rviz:=false use_gzclient:=false runtime:=1800 output:=~/dev/patrolling_results/test.zarr attrition_times:=10.0,30.0
