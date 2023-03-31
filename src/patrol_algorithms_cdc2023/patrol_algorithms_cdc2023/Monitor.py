@@ -4,6 +4,7 @@ import numpy as np
 import os
 import rclpy
 from rclpy.node import Node
+# from rclpy.qos import qos_profile_default
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -45,7 +46,7 @@ class MonitorNode(Node):
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
 
-        self.attritionTimes = [float(i) for i in self.attritionTimes.split(",")]
+        self.attritionTimes = [float(i) for i in self.attritionTimes.split(",") if len(i) > 0]
         if self.attritionTimes[0] < 0:
             self.attritionTimes = []
 
