@@ -139,13 +139,11 @@ class MonitorNode(Node):
         self.experimentInitialized = True
         self.get_logger().info("Initialization complete.")
 
-
-        # Notify agents that we are ready.
-        msg = Int16MultiArray()
-        msg.data = [-1, self.MSG_TYPES["INITIALIZE_MSG_TYPE"], 100]
-        self.pubResults.publish(msg)
-
         # Start timer.
+        self.timerInitMsg = self.create_timer(
+                1.0, # period (seconds)
+                self.onTimerSendInitialize
+            )
         if self.runtime > 0:
             self.timerStopSim = self.create_timer(
                 float(self.runtime), # period (seconds)
@@ -192,6 +190,14 @@ class MonitorNode(Node):
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
     
+    def onTimerSendInitialize(self):
+        ''' Repeatedly send the initialization message. '''
+
+        # Notify agents that we are ready.
+        msg = Int16MultiArray()
+        msg.data = [-1, self.MSG_TYPES["INITIALIZE_MSG_TYPE"], 100]
+        self.pubResults.publish(msg)
+
     def onTimerStopSim(self):
         ''' Stops the sim after time limit. '''
 
