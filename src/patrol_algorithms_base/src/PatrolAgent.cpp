@@ -51,7 +51,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/utils.h"
 
-#include "PatrolAgent.h"
+#include "patrol_algorithms_base/PatrolAgent.h"
 
 using namespace std;
 
@@ -587,8 +587,8 @@ void PatrolAgent::goalDoneCallback(const ActionGoalHandleNav2Pose::WrappedResult
             //RCLCPP_INFO(this->get_logger(), "Backup");
             // backup();
 
-            RCLCPP_INFO(this->get_logger(), "Clear costmap!");
-            this->clearLocalCostmap(false);
+            // RCLCPP_INFO(this->get_logger(), "Clear costmap!");
+            // this->clearLocalCostmap(false);
 
             RCLCPP_INFO(this->get_logger(), "Resend Goal!");
             ResendGoal = true;
@@ -629,6 +629,9 @@ void PatrolAgent::send_goal_reached() {
 
 bool PatrolAgent::check_interference (int robot_id){ //verificar se os robots estao proximos
     
+    return false;
+
+
     int i;
     double dist_quad;
     

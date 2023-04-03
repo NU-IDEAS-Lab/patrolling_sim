@@ -20,6 +20,14 @@ import configparser
 def generate_launch_description():
     ''' Generates the overall launch description. '''
 
+    startMonitorAction = Node(
+        # package="monitoring_control",
+        package="patrol_algorithms_cdc2023",
+        executable="monitor",
+        name="monitor",
+        exec_name="monitor"
+    )
+
     return LaunchDescription([
         # Arguments.
         DeclareLaunchArgument(
@@ -36,6 +44,15 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'algorithm_name', default_value='Random'
+        ),
+        DeclareLaunchArgument(
+            'runtime', default_value='0'
+        ),
+        DeclareLaunchArgument(
+            'output', default_value='./results.zarr'
+        ),
+        DeclareLaunchArgument(
+            'attrition_times', default_value="-1.0,-1.0"
         ),
         DeclareLaunchArgument(
             'params_file',
@@ -73,9 +90,12 @@ def generate_launch_description():
         SetParametersFromFile(LaunchConfiguration("params_file")),
 
         # Set override parameters.
+        SetParameter(name="runtime", value=LaunchConfiguration("runtime")),
         SetParameter(name="agent_count", value=LaunchConfiguration("agent_count")),
         SetParameter(name="algorithm_name", value=LaunchConfiguration("algorithm_name")),
         SetParameter(name="map", value=LaunchConfiguration("map")),
+        SetParameter(name="output_file", value=LaunchConfiguration("output")),
+        SetParameter(name="attrition_times", value=LaunchConfiguration("attrition_times")),
         SetParameter(
             name="patrol_graph_file",
             value=[
@@ -95,12 +115,13 @@ def generate_launch_description():
         ),
 
         # Monitor/control node.
-        Node(
-            package="monitoring_control",
-            executable="monitor",
-            name="monitor",
-            exec_name="monitor"
-        ),
+        startMonitorAction,
+
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+            target_action=startMonitorAction,
+            on_exit=EmitEvent(event=Shutdown(reason='monitor stopped')))
+        )
     ])
 
 
@@ -118,6 +139,7 @@ def generate_agents(context: LaunchContext, agent_count_subst, map_subst):
         initPosesKey = map.lower() + "_" + str(agent_count)
         initPoses = str(initPosesDict[initPosesKey])
         initPoses = initPoses.split(" ")
+        initPosesFloat = [float(x) for x in initPoses]
     except:
         return [
             LogInfo(
@@ -138,6 +160,7 @@ def generate_agents(context: LaunchContext, agent_count_subst, map_subst):
                     SetParameter(name="id_robot", value=str(agent)),
                     SetParameter(name="initial_pos.x", value=str(initPoses[agent * 2])),
                     SetParameter(name="initial_pos.y", value=str(initPoses[agent * 2 + 1])),
+                    SetParameter(name="initial_poses", value=str(initPosesFloat)),
 
                     # Include the robot launch file.
                     IncludeLaunchDescription(

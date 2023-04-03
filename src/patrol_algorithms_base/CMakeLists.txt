@@ -40,6 +40,12 @@ add_library(SSIPatrolAgent
 target_link_libraries(SSIPatrolAgent PatrolAgent) # use this instead of ament_target_dependencies since PatrolAgent is in the same package.
 # ament_target_dependencies(SSIPatrolAgent PatrolAgent)
 
+# Make the include directory public for other packages to use.
+target_include_directories(PatrolAgent
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+
 ########################################
 # Add an executable for each algorithm.
 ########################################
@@ -100,21 +106,23 @@ install(
 )
 
 # Install libraries.
-# ament_export_targets(my_libraryTargets HAS_LIBRARY_TARGET)
-# ament_export_dependencies(some_dependency)
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
+ament_export_targets(PatrolAgent HAS_LIBRARY_TARGET)
+ament_export_dependencies(patrolling_sim rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
 install(
   TARGETS
     PatrolAgent
     SSIPatrolAgent
-  # EXPORT my_libraryTargets
+  EXPORT PatrolAgent
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
+)
+
+# Install include files.
+install(
+  DIRECTORY include/patrol_algorithms_base
+  DESTINATION include
 )
 
 

@@ -99,5 +99,6 @@
         "semaphore": "cpp",
         "climits": "cpp"
     },
-    "python.analysis.typeCheckingMode": "off"
+    "python.analysis.typeCheckingMode": "off",
+    "ros.distro": "humble"
 }

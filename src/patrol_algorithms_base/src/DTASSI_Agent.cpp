@@ -35,7 +35,7 @@
 * Author: Luca Iocchi (2014-2016)
 *********************************************************************/
 
-#include "SSIPatrolAgent.h"
+#include "patrol_algorithms_base/SSIPatrolAgent.h"
 
 //#define MY_CONFIG_FILENAME "params/DTA/DTASSI.params"
 

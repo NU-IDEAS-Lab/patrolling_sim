@@ -25,7 +25,7 @@ Once prerequisites are installed, perform the following:
  4) Build the patrolling sim using Colcon, the ROS 2 build system.
 
     ```bash
-    colcon build
+    colcon build --allow-overriding gazebo_ros
     ```
 
  5) Follow instructions below to run the simulation.

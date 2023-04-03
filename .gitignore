@@ -3,3 +3,4 @@
 /log
 /results
 /experiments.txt
+*.zarr
