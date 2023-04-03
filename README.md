@@ -1,6 +1,16 @@
 # patrolling_sim
 Fork of https://github.com/davidbsp/patrolling_sim
 
+# Prerequisites
+First install all prerequisites of the [mas_simulation](https://github.com/NU-IDEAS-Lab/mas_simulation) repository.
+
+Then, perform the following:
+
+ * Install Python dependencies.
+   ```bash
+   pip install networkx[default] numpy matplotlib
+   ```
+
 # Installation
 Once prerequisites are installed, perform the following:
 
