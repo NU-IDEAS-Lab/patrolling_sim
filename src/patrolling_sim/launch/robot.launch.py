@@ -26,19 +26,11 @@ def generate_launch_description():
             'algorithm_name', default_value='Random'
         ),
 
-        GroupAction(
-            actions=[
-                PushRosNamespace(LaunchConfiguration("name")),
-                SetRemap(src='/tf', dst=['/agent', LaunchConfiguration("id"), '/tf']),
-                SetRemap(src='/tf_static', dst=['/agent', LaunchConfiguration("id"), '/tf_static']),
-                
-                # Launch the agent logic node.
-                Node(
-                    package=LaunchConfiguration("algorithm_pkg"),
-                    executable=LaunchConfiguration("algorithm_name"),
-                    name="patrol_agent",
-                    exec_name="patrol_agent"
-                ),
-            ]
-        ),
+        # Launch the agent logic node.
+        Node(
+            package=LaunchConfiguration("algorithm_pkg"),
+            executable=LaunchConfiguration("algorithm_name"),
+            name="patrol_agent",
+            exec_name="patrol_agent"
+        )
     ])
