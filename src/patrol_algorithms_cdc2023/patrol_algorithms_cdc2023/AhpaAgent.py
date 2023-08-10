@@ -33,7 +33,7 @@ class AhpaAgent(BasePatrolAgent):
         return nx.algorithms.approximation.traveling_salesman_problem(
             self.graph.graph,
             nodes=nodes,
-            method=nx.algorithms.approximation.greedy_tsp
+            method=nx.algorithms.approximation.christofides
         )
     
     def getNextNode(self):
