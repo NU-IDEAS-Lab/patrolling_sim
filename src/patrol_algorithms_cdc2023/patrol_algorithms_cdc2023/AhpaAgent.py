@@ -14,7 +14,7 @@ class AhpaAgent(BasePatrolAgent):
         self.voronoiOrigins = self.agentOrigins.copy()
         cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
         self.nodes = self.getNodeOrder(cell)
-        self.currentNodeIdx = 1
+        self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
 
         self.get_logger().info(f"Patrol order: {self.nodes}")
 
@@ -33,7 +33,7 @@ class AhpaAgent(BasePatrolAgent):
         return nx.algorithms.approximation.traveling_salesman_problem(
             self.graph.graph,
             nodes=nodes,
-            method=nx.algorithms.approximation.greedy_tsp
+            method=nx.algorithms.approximation.christofides
         )
     
     def getNextNode(self):
