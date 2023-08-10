@@ -81,6 +81,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->declare_parameter("communication_delay", 0.2);
     this->declare_parameter("lost_message_rate", 0.0);
     this->declare_parameter("agent_count", 1);
+    this->declare_parameter("tf_prefix", "");
 
     
     /** D.Portugal: needed in case you "rosrun" from another folder **/     
@@ -90,6 +91,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->communication_delay = this->get_parameter("communication_delay").get_parameter_value().get<double>();
     this->lost_message_rate = this->get_parameter("lost_message_rate").get_parameter_value().get<double>();
     this->agent_count = this->get_parameter("agent_count").get_parameter_value().get<int>(); //TODO: Make this /control/agent_count
+    this->tf_prefix = this->get_parameter("tf_prefix").get_parameter_value().get<std::string>();
 
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
@@ -269,7 +271,7 @@ void PatrolAgent::ready() {
     rclcpp::Rate loop_rate(1); //1 sec
 
     // Wait for transform to become available.
-    while(!this->tfBuffer->canTransform("base_link", "map", tf2::TimePointZero))
+    while(!this->tfBuffer->canTransform(this->tf_prefix + "base_link", this->tf_prefix + "map", tf2::TimePointZero))
     {
         RCLCPP_INFO(this->get_logger(), "Waiting for transform from map->base_link.");
         rclcpp::spin_some(this->get_node_base_interface());
@@ -460,8 +462,8 @@ void PatrolAgent::getRobotPose(int robotid, float &x, float &y, float &theta) {
         return;
     }
     
-    std::string sframe = "map";                //Patch David Portugal: Remember that the global map frame is "/map"
-    std::string dframe = "base_link";
+    std::string sframe = this->tf_prefix + "map";                //Patch David Portugal: Remember that the global map frame is "/map"
+    std::string dframe = this->tf_prefix + "base_link";
     
     // tf::StampedTransform transform;
     geometry_msgs::msg::TransformStamped transform;
@@ -505,7 +507,7 @@ void PatrolAgent::odomCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //coloca
     }
 
     // We cannot yet set the transform. Fail silently (other msgs will notify user).
-    if(!this->tfBuffer->canTransform("base_link", "map", tf2::TimePointZero))
+    if(!this->tfBuffer->canTransform(this->tf_prefix + "base_link", this->tf_prefix + "map", tf2::TimePointZero))
     {
         return;
     }

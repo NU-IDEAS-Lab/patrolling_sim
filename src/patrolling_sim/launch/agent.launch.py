@@ -62,6 +62,7 @@ def generate_agent(context: LaunchContext, id_subst, agent_count_subst, map_subs
                 SetParameter(name="initial_pos.x", value=str(initPoses[agent_id * 2])),
                 SetParameter(name="initial_pos.y", value=str(initPoses[agent_id * 2 + 1])),
                 SetParameter(name="initial_poses", value=str(initPosesFloat)),
+                SetParameter(name="tf_prefix", value=f"agent{agent_id}/"),
 
                 # Include the robot launch file.
                 IncludeLaunchDescription(

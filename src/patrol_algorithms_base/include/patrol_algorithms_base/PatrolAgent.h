@@ -72,6 +72,7 @@ protected:
     
     int agent_count;
     int ID_ROBOT;
+    std::string tf_prefix;
 
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
