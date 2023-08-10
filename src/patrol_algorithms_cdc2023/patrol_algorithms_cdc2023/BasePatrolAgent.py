@@ -37,12 +37,14 @@ class BasePatrolAgent(Node):
         self.declare_parameter("communication_delay", 0.2)
         self.declare_parameter("lost_message_rate", 0.0)
         self.declare_parameter("agent_count", 1)
+        self.declare_parameter("tf_prefix", "")
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
         self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
         self.goal_reached_wait = self.get_parameter("goal_reached_wait").get_parameter_value().double_value
         self.communication_delay = self.get_parameter("communication_delay").get_parameter_value().double_value
         self.lost_message_rate = self.get_parameter("lost_message_rate").get_parameter_value().double_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
+        self.tf_prefix = self.get_parameter("tf_prefix").get_parameter_value().string_value
         self.id = self.get_parameter("id_robot").get_parameter_value().integer_value
 
         self.get_logger().info(f"Initializing patrol agent {self.id}.")
@@ -100,7 +102,7 @@ class BasePatrolAgent(Node):
         self.acNav2Pose.wait_for_server()
         self._waitForNodeToActivate("bt_navigator")
         self._waitForNodeToActivate("amcl")
-        while rclpy.ok() and not self.tfBuffer.can_transform("map", "base_link", rclpy.time.Time()):
+        while rclpy.ok() and not self.tfBuffer.can_transform(self.tf_prefix + "map", self.tf_prefix + "base_link", rclpy.time.Time()):
             rclpy.spin_once(self)
         
 
@@ -182,8 +184,8 @@ class BasePatrolAgent(Node):
         raise NotImplementedError()
         try:
             t = self.tfBuffer.lookupTransform(
-                "base_link",
-                "map",
+                self.tf_prefix + "base_link",
+                self.tf_prefix + "map",
                 rclpy.time.Time()
             )
         except TransformException as e:
