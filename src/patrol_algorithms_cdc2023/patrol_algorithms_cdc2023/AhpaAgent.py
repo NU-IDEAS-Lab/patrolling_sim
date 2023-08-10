@@ -14,7 +14,7 @@ class AhpaAgent(BasePatrolAgent):
         self.voronoiOrigins = self.agentOrigins.copy()
         cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
         self.nodes = self.getNodeOrder(cell)
-        self.currentNodeIdx = 1
+        self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
 
         self.get_logger().info(f"Patrol order: {self.nodes}")
 
