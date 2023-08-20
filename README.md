@@ -8,7 +8,7 @@ Then, perform the following:
 
  * Install Python dependencies.
    ```bash
-   pip install networkx[default] numpy matplotlib
+   pip install networkx[default] numpy matplotlib zarr
    ```
 
 # Installation
