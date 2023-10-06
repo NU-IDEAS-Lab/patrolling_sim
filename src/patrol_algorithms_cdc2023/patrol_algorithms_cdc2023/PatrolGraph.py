@@ -59,3 +59,4 @@ class PatrolGraph():
                     bestNode = i
             origins.append(bestNode)
         return origins
+
