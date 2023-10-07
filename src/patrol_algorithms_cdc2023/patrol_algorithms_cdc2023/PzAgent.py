@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space
-from r_actor_critic import R_Actor
+from .r_actor_critic import R_Actor
 
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
 
@@ -77,6 +77,7 @@ class PzAgent(BasePatrolAgent):
         obs = np.array(obs)
         action, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
         self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
+        print(action)
         return action
     
     def onAgentAttrition(self, agent):
@@ -132,7 +133,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Create the node and execute.
-    agent = AhpaAgent()
+    agent = PzAgent()
     rclpy.spin(agent)
 
     # Destroy the node explicitly.

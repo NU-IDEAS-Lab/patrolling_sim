@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-from utils.util import init, check
-from utils.cnn import CNNBase
-from utils.mlp import MLPBase
-from utils.rnn import RNNLayer
-from utils.act import ACTLayer
-from utils.popart import PopArt
-from utils.util import get_shape_from_obs_space
+from .utils.util import init, check
+from .utils.cnn import CNNBase
+from .utils.mlp import MLPBase
+from .utils.rnn import RNNLayer
+from .utils.act import ACTLayer
+from .utils.popart import PopArt
+from .utils.util import get_shape_from_obs_space
 
 
 class R_Actor(nn.Module):
