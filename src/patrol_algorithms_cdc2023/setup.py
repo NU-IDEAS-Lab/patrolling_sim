@@ -5,7 +5,7 @@ package_name = 'patrol_algorithms_cdc2023'
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=[package_name, "patrol_algorithms_cdc2023.utils"],
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'monitor = patrol_algorithms_cdc2023.Monitor:main',
             'BasePatrolAgent = patrol_algorithms_cdc2023.BasePatrolAgent:main',
-            'AHPA = patrol_algorithms_cdc2023.AhpaAgent:main'
+            'AHPA = patrol_algorithms_cdc2023.AhpaAgent:main',
+            'MARL = patrol_algorithms_cdc2023.PzAgent:main'
         ],
     },
 )
