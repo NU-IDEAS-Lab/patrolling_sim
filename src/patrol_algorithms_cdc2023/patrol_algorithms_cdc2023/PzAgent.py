@@ -6,6 +6,11 @@ from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space
 from .r_actor_critic import R_Actor
 
+from onpolicy.scripts.render.render_patrolling import get_config, parse_args
+
+import os
+import yaml
+
 from std_msgs.msg import Int32MultiArray
 
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
@@ -19,7 +24,7 @@ def _t2n(x):
 
 
 class PzAgent(BasePatrolAgent):
-    def __init__(self, args):
+    def __init__(self, model_dir = "/home/xinliangli/Downloads/configuration"):
         super().__init__()
 
         self.get_logger().info(f"PZ agent {self.id} has origin {self.agentOrigins[self.id]}.")
@@ -27,15 +32,38 @@ class PzAgent(BasePatrolAgent):
         # Set the allocation.
         self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
 
+
+        #Load the default arguments
+        self.parser = get_config()
+        self.all_args = parse_args([], self.parser)
+
+        #Load new arguments to Namespace object
+        config_file = os.path.join(model_dir, "config.yaml")
+        self.args = yaml.load(open(config_file), Loader=yaml.FullLoader)
+
+
+        # Convert the arguments to a Namespace object
+        for a in self.args:
+            if type(self.args[a]) == dict and "value" in self.args[a]:
+                self.args[a] = self.args[a]["value"]
+        for a in self.args:
+            setattr(self.all_args, a, self.args[a])
+
+
+        # Set required specific argument
+        self.all_args.use_wandb = False
+        self.all_args.model_dir = model_dir
+
+
         # set the state of this agent in this environment
         self.adjacency_obs = {}
         self.adjacency_obs["agent_id"] = self.id
 
         self.obs_space = flatten_space(self._buildStateSpace())
         self.action_space = spaces.Discrete(len(self.graph))
-        self.recurrent_N = self.args.recurrent_N
-        self.hidden_size = self.args.hidden_size
-        self.actor = R_Actor(args, self.obs_space, self.action_space)
+        self.recurrent_N = self.all_args.recurrent_N
+        self.hidden_size = self.all_args.hidden_size
+        self.actor = R_Actor(self.all_args, self.obs_space, self.action_space)
         checkpoint = torch.load("actor_agent0.pt")
         self.actor.load_state_dict(checkpoint)
         self.rnn_states = np.zeros((1, 1, self.recurrent_N, self.hidden_size), dtype=np.float32)
@@ -60,7 +88,7 @@ class PzAgent(BasePatrolAgent):
         # Xinliang, this is where you get the idleness information!
 
 
-    def set_state(self, device):
+    def set_state(self):
         self.adjacency_obs["agent_id"] = self.id 
         self.adjacency_obs["vertex_state"] = {v: 0.0 for v in range(self.graph.number_of_nodes())}
         self.adjacency_obs["adjacency"] = -1.0 * np.ones((self.pg.graph.number_of_nodes(), self.pg.graph.number_of_nodes()), dtype=np.float32)
