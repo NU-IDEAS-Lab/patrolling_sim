@@ -6,6 +6,8 @@ from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space
 from .r_actor_critic import R_Actor
 
+from std_msgs.msg import Int32MultiArray
+
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
 
 
@@ -27,6 +29,8 @@ class PzAgent(BasePatrolAgent):
 
         # set the state of this agent in this environment
         self.adjacency_obs = {}
+        self.adjacency_obs["agent_id"] = self.id
+
         self.obs_space = flatten_space(self._buildStateSpace())
         self.action_space = spaces.Discrete(len(self.graph))
         self.recurrent_N = self.args.recurrent_N
@@ -37,27 +41,23 @@ class PzAgent(BasePatrolAgent):
         self.rnn_states = np.zeros((1, 1, self.recurrent_N, self.hidden_size), dtype=np.float32)
         self.masks = np.ones((1, 1, 1), dtype=np.float32)
 
+        # Subscribe to the /idleness topic.
+        self.subIdleness = self.create_subscription(
+            Int32MultiArray,
+            "/idleness",
+            self.onReceiveIdleness,
+            100
+        )
 
 
         self.get_logger().info(f"Patrol order: {self.nodes}")
 
-    # def getNodeAllocation(self, origins, originalOrigins):
-    #     ''' Returns the Voronoi partitions based on the origins provided. '''
 
-    #     cells = nx.algorithms.voronoi.voronoi_cells(self.graph.graph, origins)
-    #     return cells[originalOrigins[self.id]]
+    def onReceiveIdleness(self, msg):
+        ''' Called when a new idleness vector is received. '''
 
-    # def getNodeOrder(self, nodes):
-    #     ''' Returns the visitation order for the provided nodes. '''
-
-    #     if len(nodes) <= 1:
-    #         return list(nodes)
-
-    #     return nx.algorithms.approximation.traveling_salesman_problem(
-    #         self.graph.graph,
-    #         nodes=nodes,
-    #         method=nx.algorithms.approximation.christofides
-    #     )
+        print(f"Received idleness information: {msg.data}")
+        # Xinliang, this is where you get the idleness information!
 
 
     def set_state(self, device):
