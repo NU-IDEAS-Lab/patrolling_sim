@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space
-from .r_actor_critic import R_Actor
+from onpolicy.algorithms.r_mappo.algorithm.r_actor_critic import R_Actor
 
 from onpolicy.scripts.render.render_patrolling import get_config, parse_args
 
@@ -27,10 +27,10 @@ class PzAgent(BasePatrolAgent):
     def __init__(self, model_dir = "/home/xinliangli/Downloads/configuration"):
         super().__init__()
 
-        self.get_logger().info(f"PZ agent {self.id} has origin {self.agentOrigins[self.id]}.")
+        self.get_logger().info(f"Here is the initialize of the PZ agent")
 
         # Set the allocation.
-        self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
+        # self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
 
 
         #Load the default arguments
@@ -53,18 +53,28 @@ class PzAgent(BasePatrolAgent):
         # Set required specific argument
         self.all_args.use_wandb = False
         self.all_args.model_dir = model_dir
+        self.all_args.cuda_idx = 0
 
 
         # set the state of this agent in this environment
         self.adjacency_obs = {}
         self.adjacency_obs["agent_id"] = self.id
 
-        self.obs_space = flatten_space(self._buildStateSpace())
-        self.action_space = spaces.Discrete(len(self.graph))
+        t= self._buildStateSpace("adjacency")
+        self.obs_space = flatten_space(t)
+        self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
+        self.get_logger().info("here finished the buildStateSpace")
+        self.get_logger().info(f"here is the size of obs space {len(self.obs_space.shape)}")
+        # self.obs_space = flatten_space(t)
+        self.action_space = spaces.Discrete(len(self.graph.graph))
+        self.get_logger().info("here finished the ActionSpace")
         self.recurrent_N = self.all_args.recurrent_N
         self.hidden_size = self.all_args.hidden_size
         self.actor = R_Actor(self.all_args, self.obs_space, self.action_space)
-        checkpoint = torch.load("actor_agent0.pt")
+        # for name, layer in self.actor.named_children():
+        #     self.get_logger().info(f"here is name {name} and layer {layer}")
+        checkpoint = torch.load("/home/xinliangli/Downloads/configuration/actor_agent0.ptrom", map_location=torch.device("cuda"))
+        # self.get_logger().info(f"here is the type of checkpoint {type(checkpoint)}")
         self.actor.load_state_dict(checkpoint)
         self.rnn_states = np.zeros((1, 1, self.recurrent_N, self.hidden_size), dtype=np.float32)
         self.masks = np.ones((1, 1, 1), dtype=np.float32)
@@ -77,8 +87,7 @@ class PzAgent(BasePatrolAgent):
             100
         )
 
-
-        self.get_logger().info(f"Patrol order: {self.nodes}")
+        self.get_logger().info(f"PZ agent initialize finished here")
 
 
     def onReceiveIdleness(self, msg):
@@ -90,8 +99,8 @@ class PzAgent(BasePatrolAgent):
 
     def set_state(self):
         self.adjacency_obs["agent_id"] = self.id 
-        self.adjacency_obs["vertex_state"] = {v: 0.0 for v in range(self.graph.number_of_nodes())}
-        self.adjacency_obs["adjacency"] = -1.0 * np.ones((self.pg.graph.number_of_nodes(), self.pg.graph.number_of_nodes()), dtype=np.float32)
+        self.adjacency_obs["vertex_state"] = {v: 0.0 for v in range(self.graph.graph.number_of_nodes())}
+        self.adjacency_obs["adjacency"] = -1.0 * np.ones((self.graph.graph.number_of_nodes(), self.graph.graph.number_of_nodes()), dtype=np.float32)
         graphPos = {}
         for i in range(self.agent_count):
             graphPos[i] = -1.0 * np.ones(3, dtype=np.float32)
@@ -108,51 +117,139 @@ class PzAgent(BasePatrolAgent):
         print(action)
         return action
     
-    def onAgentAttrition(self, agent):
-        ''' Called when an agent is lost. '''
+    # def onAgentAttrition(self, agent):
+    #     ''' Called when an agent is lost. '''
 
-        super().onAgentAttrition(agent)
-        if agent == self.id:
-            return
+    #     super().onAgentAttrition(agent)
+    #     if agent == self.id:
+    #         return
 
-        # Update the Voronoi partitions.
-        del self.voronoiOrigins[agent]
-        cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
-        old = self.nodes
-        self.nodes = self.getNodeOrder(cell)
+    #     # Update the Voronoi partitions.
+    #     del self.voronoiOrigins[agent]
+    #     cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
+    #     old = self.nodes
+    #     self.nodes = self.getNodeOrder(cell)
 
-        if old != self.nodes:
-            self.get_logger().info(f"Updated allocation!\nOld patrol route: {old}\nNew patrol route: {self.nodes}")
+    #     if old != self.nodes:
+    #         self.get_logger().info(f"Updated allocation!\nOld patrol route: {old}\nNew patrol route: {self.nodes}")
 
 
-    def _buildStateSpace(self):
+    # def _buildStateSpace(self):
+    #     state_space = {}
+    #     state_space["agent_id"] = spaces.Box(
+    #         low = -1,
+    #         high = self.agent_count,
+    #         dtype = np.int32
+    #     )
+
+    #     state_space["vertex_state"] = spaces.Dict({
+    #         v:spaces.Box(
+    #             low = -1.0,
+    #             high = np.inf,
+    #         ) for v in range(self.graph.graph.number_of_nodes())
+    #     })
+
+    #     state_space["adjacency"] = spaces.Box(
+    #         low = -1.0,
+    #         high = 1.0,
+    #         shape = (self.graph.graph.number_of_nodes(), self.graph.graph.number_of_nodes()),
+    #         dtype = np.float32,
+    #     )
+
+    #     state_space["agent_graph_position"] = spaces.Dict({
+    #             a: spaces.Box(
+    #                 low = np.array([-1.0, -1.0, -1.0], dtype=np.float32),
+    #                 high = np.array([self.graph.graph.number_of_nodes(), self.graph.graph.number_of_nodes(), 1.0], dtype=np.float32),
+    #             ) for a in range(self.agent_count)
+    #         }) # type: ignore
+        
+
+    #     if type(state_space) == dict:
+    #         state_space = spaces.Dict(state_space)
+        
+    #     return state_space
+    def _buildStateSpace(self, observe_method):
+        ''' Creates a state space given the observation method.
+            Returns a gym.spaces.* object. '''
+        
+        # Create the state space dictionary.
         state_space = {}
-        state_space["agent_id"] = spaces.Box(
-            low = -1,
-            high = len(self.agent_count),
-            dytype = np.int32
-        )
 
-        state_space["vertex_state"] = spaces.Dict({
-            v:spaces.Box(
-                low = -1.0,
-                high = np.inf,
-            ) for v in range(self.graph.number_of_nodes())
-        })
+        # Add to the dictionary depending on the observation method.
 
-        state_space["adjacency"] = spaces.Box(
-            low = -1.0,
-            high = 1.0,
-            shape = (self.graph.number_of_nodes(), self.graph.number_of_nodes),
-            dtype = np.float32,
-        )
+        # Add agent id.
+        if observe_method in ["ajg_new", "ajg_newer", "adjacency"]:
+            state_space["agent_id"] = spaces.Box(
+                low = -1,
+                high = self.agent_count,
+                dtype=np.int32
+            )
 
-        state_space["agent_graph_position"] = spaces.Dict({
+        # Add vertex idleness time.
+        if observe_method in ["ranking", "raw", "old", "ajg_new", "ajg_newer", "adjacency", "idlenessOnly"]:
+            state_space["vertex_state"] = spaces.Dict({
+                v: spaces.Box(
+                    low = -1.0,
+                    high = np.inf,
+                ) for v in range(self.graph.graph.number_of_nodes())
+            }) # type: ignore
+
+        # Add agent Euclidean position.
+        # if observe_method in ["ranking", "raw", "old"]:
+        #     # Get graph bounds in Euclidean space.
+        #     pos = nx.get_node_attributes(self.graph.graph, 'pos')
+        #     minPosX = min(pos[p][0] for p in pos)
+        #     maxPosX = max(pos[p][0] for p in pos)
+        #     minPosY = min(pos[p][1] for p in pos)
+        #     maxPosY = max(pos[p][1] for p in pos)
+
+        #     state_space["agent_state"] = spaces.Dict({
+        #         a: spaces.Box(
+        #             low = np.array([minPosX, minPosY], dtype=np.float32),
+        #             high = np.array([maxPosX, maxPosY], dtype=np.float32),
+        #         ) for a in self.possible_agents
+        #     }) # type: ignore
+        
+        # # Add vertex distances from each agent.
+        # if observe_method in ["old", "ajg_new", "ajg_newer"]:
+        #     state_space["vertex_distances"] = spaces.Dict({
+        #         a: spaces.Box(
+        #             low = np.array([0.0] * self.pg.graph.number_of_nodes(), dtype=np.float32),
+        #             high = np.array([np.inf] * self.pg.graph.number_of_nodes(), dtype=np.float32),
+        #         ) for a in self.possible_agents
+        #     }) # type: ignore
+        
+        # # Add bitmap observation.
+        # if observe_method in ["bitmap", "bitmap2"]:
+        #     state_space = spaces.Box(
+        #         low=-2.0,
+        #         high=np.inf,
+        #         shape=(self.observe_bitmap_dims[0], self.observe_bitmap_dims[1], len(self.OBSERVATION_CHANNELS)),
+        #         dtype=np.float32,
+        #     )
+        
+        # Add adjacency matrix.
+        if observe_method in ["adjacency", "ajg_newer"]:
+            state_space["adjacency"] = spaces.Box(
+                low=-1.0,
+                high=1.0,
+                shape=(self.graph.graph.number_of_nodes(), self.graph.graph.number_of_nodes()),
+                dtype=np.float32,
+            )
+        
+        # Add agent graph position vector.
+        if observe_method in ["adjacency", "ajg_newer"]:
+            state_space["agent_graph_position"] = spaces.Dict({
                 a: spaces.Box(
                     low = np.array([-1.0, -1.0, -1.0], dtype=np.float32),
-                    high = np.array([self.pg.graph.number_of_nodes(), self.pg.graph.number_of_nodes(), 1.0], dtype=np.float32),
-                ) for a in self.agent_count
+                    high = np.array([self.graph.graph.number_of_nodes(), self.graph.graph.number_of_nodes(), 1.0], dtype=np.float32),
+                ) for a in range(self.agent_count)
             }) # type: ignore
+        
+        if type(state_space) == dict:
+            state_space = spaces.Dict(state_space)
+        
+        return state_space
 
 
 
