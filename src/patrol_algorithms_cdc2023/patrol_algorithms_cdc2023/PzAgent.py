@@ -11,7 +11,7 @@ from onpolicy.scripts.render.render_patrolling import get_config, parse_args
 import os
 import yaml
 
-from std_msgs.msg import Int32MultiArray
+from std_msgs.msg import Float32MultiArray
 
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
 
@@ -71,7 +71,7 @@ class PzAgent(BasePatrolAgent):
 
         # Subscribe to the /idleness topic.
         self.subIdleness = self.create_subscription(
-            Int32MultiArray,
+            Float32MultiArray,
             "/idleness",
             self.onReceiveIdleness,
             100
