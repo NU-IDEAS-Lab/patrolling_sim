@@ -234,7 +234,7 @@ class MonitorNode(Node):
         agent = random.sample(list(self.agentsRemaining), 1)[0]
         self.agentsRemaining -= {agent}
 
-        self.perfromAgentAttrition(agent)
+        self.performAgentAttrition(agent)
 
         self.timerAttrition.cancel()
         self.timerAttrition = None
@@ -247,7 +247,7 @@ class MonitorNode(Node):
             )
 
 
-    def perfromAgentAttrition(self, agent):
+    def performAgentAttrition(self, agent):
         self.get_logger().warn(f"Performing attrition on agent {agent}.")
         os.system(f"pkill -2 -f '__ns:=/agent{agent}'")
 
