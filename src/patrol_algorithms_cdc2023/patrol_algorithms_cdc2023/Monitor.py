@@ -118,12 +118,6 @@ class MonitorNode(Node):
             100
         )
 
-        # Timers.
-        self.timerSendIdleness = self.create_timer(
-            0.1, # period (seconds)
-            self.onTimerSendIdleness
-        )
-
         # Wait for initialization.
         self.waitForAgents()
 
@@ -152,6 +146,10 @@ class MonitorNode(Node):
         self.get_logger().info("Initialization complete.")
 
         # Start timer.
+        self.timerSendIdleness = self.create_timer(
+            0.1, # period (seconds)
+            self.onTimerSendIdleness
+        )
         self.timerInitMsg = self.create_timer(
             1.0, # period (seconds)
             self.onTimerSendInitialize
@@ -201,7 +199,7 @@ class MonitorNode(Node):
         self.visitTimes.append(timeElapsed.nanoseconds)
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
-        self.graph.setNodeVisitTime(node, timeElapsed.seconds_nanoseconds()[0])
+        self.graph.setNodeVisitTime(node, timeElapsed.nanoseconds / 1.0e9)
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
@@ -220,7 +218,7 @@ class MonitorNode(Node):
     def onTimerSendIdleness(self):
         ''' Repeatedly send the idleness message. '''
 
-        secondsElapsed = (self.get_clock().now() - self.timeStart).seconds_nanoseconds()[0]
+        secondsElapsed = (self.get_clock().now() - self.timeStart).nanoseconds / 1.0e9 #seconds to ns
 
         msg = Float32MultiArray()
         msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in self.graph.graph.nodes()]
