@@ -6,7 +6,7 @@ from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space
 from .r_actor_critic import R_Actor
 
-from std_msgs.msg import Int32MultiArray
+from std_msgs.msg import Float32MultiArray
 
 from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
 
@@ -43,7 +43,7 @@ class PzAgent(BasePatrolAgent):
 
         # Subscribe to the /idleness topic.
         self.subIdleness = self.create_subscription(
-            Int32MultiArray,
+            Float32MultiArray,
             "/idleness",
             self.onReceiveIdleness,
             100

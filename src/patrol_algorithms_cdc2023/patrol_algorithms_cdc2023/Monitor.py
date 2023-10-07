@@ -13,7 +13,7 @@ import random
 import zarr
 
 from patrolling_sim_interfaces.msg import AgentTelemetry
-from std_msgs.msg import Int16MultiArray, Int32MultiArray
+from std_msgs.msg import Int16MultiArray, Float32MultiArray
 
 from patrol_algorithms_cdc2023.PatrolGraph import PatrolGraph
 
@@ -113,7 +113,7 @@ class MonitorNode(Node):
             100
         )
         self.pubIdleness = self.create_publisher(
-            Int32MultiArray,
+            Float32MultiArray,
             "/idleness",
             100
         )
@@ -222,7 +222,7 @@ class MonitorNode(Node):
 
         secondsElapsed = (self.get_clock().now() - self.timeStart).seconds_nanoseconds()[0]
 
-        msg = Int32MultiArray()
+        msg = Float32MultiArray()
         msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in self.graph.graph.nodes()]
         self.pubIdleness.publish(msg)
     
