@@ -13,7 +13,7 @@ import random
 import zarr
 
 from patrolling_sim_interfaces.msg import AgentTelemetry
-from std_msgs.msg import Int16MultiArray
+from std_msgs.msg import Int16MultiArray, Int32MultiArray
 
 from patrol_algorithms_cdc2023.PatrolGraph import PatrolGraph
 
@@ -112,6 +112,17 @@ class MonitorNode(Node):
             "/results",
             100
         )
+        self.pubIdleness = self.create_publisher(
+            Int32MultiArray,
+            "/idleness",
+            100
+        )
+
+        # Timers.
+        self.timerSendIdleness = self.create_timer(
+            0.1, # period (seconds)
+            self.onTimerSendIdleness
+        )
 
         # Wait for initialization.
         self.waitForAgents()
@@ -142,9 +153,9 @@ class MonitorNode(Node):
 
         # Start timer.
         self.timerInitMsg = self.create_timer(
-                1.0, # period (seconds)
-                self.onTimerSendInitialize
-            )
+            1.0, # period (seconds)
+            self.onTimerSendInitialize
+        )
         if self.runtime > 0:
             self.timerStopSim = self.create_timer(
                 float(self.runtime), # period (seconds)
@@ -190,6 +201,7 @@ class MonitorNode(Node):
         self.visitTimes.append(timeElapsed.nanoseconds)
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
+        self.graph.setNodeVisitTime(node, timeElapsed.seconds_nanoseconds()[0])
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
@@ -204,6 +216,15 @@ class MonitorNode(Node):
 
         self.get_logger().warn(f"Simulation completed after {self.runtime}s. Shutting down.")
         raise KeyboardInterrupt()
+    
+    def onTimerSendIdleness(self):
+        ''' Repeatedly send the idleness message. '''
+
+        secondsElapsed = (self.get_clock().now() - self.timeStart).seconds_nanoseconds()[0]
+
+        msg = Int32MultiArray()
+        msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in self.graph.graph.nodes()]
+        self.pubIdleness.publish(msg)
     
     def onTimerAttrition(self):
         ''' Kills agent after time limit. '''
