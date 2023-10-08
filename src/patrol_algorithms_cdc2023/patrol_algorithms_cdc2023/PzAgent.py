@@ -26,8 +26,12 @@ def _t2n(x):
 
 
 class PzAgent(BasePatrolAgent):
-    def __init__(self, model_dir = "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files"):
+    def __init__(self):
         super().__init__()
+
+        # Set the model directory using a ROS 2 parameter.
+        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
+        model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
 
         self.get_logger().info(f"Here is the initialize of the PZ agent")
 
