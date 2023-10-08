@@ -60,8 +60,8 @@ class PzAgent(BasePatrolAgent):
         self.adjacency_obs = {}
         self.adjacency_obs["agent_id"] = self.id
 
-        t= self._buildStateSpace("adjacency")
-        self.obs_space = flatten_space(t)
+        self.t= self._buildStateSpace("adjacency")
+        self.obs_space = flatten_space(self.t)
         self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
         self.get_logger().info("here finished the buildStateSpace")
         self.get_logger().info(f"here is the size of obs space {len(self.obs_space.shape)}")
@@ -73,7 +73,7 @@ class PzAgent(BasePatrolAgent):
         self.actor = R_Actor(self.all_args, self.obs_space, self.action_space)
         # for name, layer in self.actor.named_children():
         #     self.get_logger().info(f"here is name {name} and layer {layer}")
-        checkpoint = torch.load("/home/xinliangli/Downloads/configuration/actor_agent0.ptrom", map_location=torch.device("cuda"))
+        checkpoint = torch.load("/home/xinliangli/Downloads/configuration/actor_agent0.ptrom", map_location=torch.device("cpu"))
         # self.get_logger().info(f"here is the type of checkpoint {type(checkpoint)}")
         self.actor.load_state_dict(checkpoint)
         self.rnn_states = np.zeros((1, 1, self.recurrent_N, self.hidden_size), dtype=np.float32)
@@ -105,16 +105,24 @@ class PzAgent(BasePatrolAgent):
         for i in range(self.agent_count):
             graphPos[i] = -1.0 * np.ones(3, dtype=np.float32)
         self.adjacency_obs["agent_graph_position"] = graphPos
+        return self.adjacency_obs
     
     def getNextNode(self):
         ''' Returns the next node to visit. '''
 
+        self.get_logger().info("here is the start of PZ Agent Action")
         obs = self.set_state()
-        obs = flatten(self.obs_space, obs)
+        # self.get_logger().info("here is the start of PZ Agent Action process")
+        # self.obs_space_new = spaces.Dict(self.t)
+        obs = flatten(self.t, obs)
+        self.get_logger().info("here is the start of PZ Agent Action process")
         obs = np.array(obs)
+        obs = obs.reshape((1,-1))
+        self.get_logger().info(f"here is the shape of obs of input rnn {obs.shape}, {self.rnn_states[:,0].shape}, {self.masks[:,0].shape}")
         action, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
+        self.get_logger().info("here is the mid process")
         self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
-        print(action)
+        self.get_logger().info(f"the action of PZ Agent Action {action}")
         return action
     
     # def onAgentAttrition(self, agent):
