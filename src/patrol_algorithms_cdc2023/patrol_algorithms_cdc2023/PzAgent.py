@@ -31,7 +31,7 @@ class PzAgent(BasePatrolAgent):
         super().__init__()
 
         # Set the model directory using a ROS 2 parameter.
-        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
+        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
         model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
 
         self.get_logger().info(f"Here is the initialize of the PZ agent")
@@ -83,7 +83,11 @@ class PzAgent(BasePatrolAgent):
         self.possible_agents = self.agents
 
         self.t= pz_parallel_env._buildStateSpace(self, "bitmap2")
-        self.obs_space = flatten_space(self.t)
+        self.flatten_obs = type(self.t) == spaces.Dict
+        if self.flatten_obs:
+            self.obs_space = flatten_space(self.t)
+        else:
+            self.obs_space = self.t
         self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
         self.get_logger().info("here finished the buildStateSpace")
         self.get_logger().info(f"here is the size of obs space {len(self.obs_space.shape)}")
@@ -142,10 +146,12 @@ class PzAgent(BasePatrolAgent):
 
         # self.get_logger().info("here is the start of PZ Agent Action process")
         # self.obs_space_new = spaces.Dict(self.t)
-        obs = flatten(self.t, obs)
         self.get_logger().info("here is the start of PZ Agent Action process")
-        obs = np.array(obs)
-        obs = obs.reshape((1,-1))
+        if self.flatten_obs:
+            obs = flatten(self.t, obs)
+            obs = obs.reshape((1,-1))
+        else:
+            obs = np.expand_dims(obs, axis=0)
         self.get_logger().info(f"here is the shape of obs of input rnn {obs.shape}, {self.rnn_states[:,0].shape}, {self.masks[:,0].shape}")
         action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
         action = action.item()
@@ -279,7 +285,7 @@ class PzAgent(BasePatrolAgent):
         # Add bitmap observation.
         if observe_method in ["bitmap"]:
             # Create an image which defaults to -1.
-            bitmap = -1.0 * np.ones(self.observation_space(agent).shape, dtype=np.float32)
+            bitmap = -1.0 * np.ones(self.obs_space.shape, dtype=np.float32)
 
             # Set the observing agent's ID in the (0, 0) position. This is a bit hacky.
             bitmap[0, 0, self.OBSERVATION_CHANNELS.AGENT_ID] = agent.id
@@ -331,7 +337,7 @@ class PzAgent(BasePatrolAgent):
         # Add bitmap2 observation. This variant uses -1 to indicate unobserved nodes and agents, rather than cropping the bitmap.
         if observe_method in ["bitmap2"]:
             # Create an image which defaults to -1.
-            bitmap = -1.0 * np.ones(self.observation_space(agent).shape, dtype=np.float32)
+            bitmap = -1.0 * np.ones(self.obs_space.shape, dtype=np.float32)
 
             # Set the observing agent's ID in the (0, 0) position. This is a bit hacky.
             bitmap[0, 0, self.OBSERVATION_CHANNELS.AGENT_ID] = agent.id
