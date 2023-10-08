@@ -8,6 +8,7 @@ from onpolicy.algorithms.r_mappo.algorithm.r_actor_critic import R_Actor
 
 from onpolicy.scripts.render.render_patrolling import get_config, parse_args
 
+import random
 import os
 import yaml
 
@@ -115,9 +116,6 @@ class PzAgent(BasePatrolAgent):
             100
         )
 
-
-        print("NEXT NODE: ", self.getNextNode())
-
         self.get_logger().info(f"PZ agent initialize finished here")
 
 
@@ -141,8 +139,6 @@ class PzAgent(BasePatrolAgent):
         self.get_logger().info("here is the start of PZ Agent Action")
 
         obs = self._populateStateSpace("bitmap2", self.agents[self.id], self.all_args.observation_radius, False)
-        print("MAKE OBS: ", obs)
-
 
         # self.get_logger().info("here is the start of PZ Agent Action process")
         # self.obs_space_new = spaces.Dict(self.t)
@@ -196,7 +192,7 @@ class PzAgent(BasePatrolAgent):
         vertices = [v for v in self.pg.graph.nodes if self._dist(self.pg.getNodePosition(v), agent.position) <= radius]
         agents = [a for a in agentList if self._dist(a.position, agent.position) <= radius]
         for a in agentList:
-            if a != agent and a not in agents and self.comms_model.canReceive(a, agent):
+            if a != agent and a not in agents and self.canReceiveObs():
                 agents.append(a)
                 for v in self.pg.graph.nodes:
                     if v not in vertices and self._dist(self.pg.getNodePosition(v), a.position) <= radius:
@@ -418,6 +414,9 @@ class PzAgent(BasePatrolAgent):
             raise ValueError(f"Invalid observation method {self.observe_method}")
         
         return obs
+    
+    def canReceiveObs(self):
+        return random.random() < 1.0 - self.lost_message_rate
     
     def _minMaxNormalize(self, x, eps=1e-8, a=0.0, b=1.0, maximum=None, minimum=None):
         ''' Normalizes numpy array x to be between a and b. '''

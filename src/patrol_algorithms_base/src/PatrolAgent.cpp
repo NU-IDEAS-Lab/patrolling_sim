@@ -889,9 +889,9 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
     }
     
     if (!initialize) {
-#if 0
-        // communication delay
         if(ID_ROBOT>-1){
+#if 0
+            // communication delay
             if ((communication_delay>0.001) && (id_sender!=ID_ROBOT)) {
                     double current_time = this->get_clock()->now().seconds();
                     if (current_time-last_communication_delay_time>1.0) { 
@@ -901,6 +901,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
                             last_communication_delay_time = current_time;
                 }
             }
+#endif
             bool lost_message = false;
             if ((lost_message_rate>0.0001)&& (id_sender!=ID_ROBOT)) {
                 double r = (rand() % 1000)/1000.0;
@@ -910,8 +911,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
                 RCLCPP_INFO(this->get_logger(), "Lost message");
             }
         }
-#endif
-            receive_results();
+        receive_results();
     }
 
     // ros::spinOnce();
