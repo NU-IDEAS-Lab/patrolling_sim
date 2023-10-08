@@ -20,6 +20,7 @@ from patrolling_zoo.env.patrolling_zoo import PatrolAgent as PzPatrolAgent
 from patrolling_zoo.env.patrolling_zoo import parallel_env as pz_parallel_env
 from onpolicy.envs.patrolling.Patrolling_Env import PatrollingEnv
 
+from ament_index_python.packages import get_package_share_directory
 
 
 def _t2n(x):
@@ -33,7 +34,8 @@ class PzAgent(BasePatrolAgent):
         super().__init__()
 
         # Set the model directory using a ROS 2 parameter.
-        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
+        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
+        # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
         model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
 
         self.get_logger().info(f"Here is the initialize of the PZ agent")
@@ -71,7 +73,7 @@ class PzAgent(BasePatrolAgent):
         self.all_args.use_wandb = False
         self.all_args.model_dir = model_dir
         self.all_args.cuda_idx = 0
-        self.all_args.graph_file = "/home/anthony/papers/aamas2024/patrolling_zoo/patrolling_zoo/env/cumberland.graph"
+        self.all_args.graph_file = os.path.join(get_package_share_directory("patrolling_sim"), "models/maps/cumberland/cumberland_full_res.graph")
 
 
         # Set up environment
@@ -157,7 +159,7 @@ class PzAgent(BasePatrolAgent):
         # self.obs_space_new = spaces.Dict(self.t)
         self.get_logger().info("here is the start of PZ Agent Action process")
         if self.env.flatten_observations:
-            obs = flatten(self.t, obs)
+            obs = flatten(self.obs_space, obs)
             obs = obs.reshape((1,-1))
         else:
             obs = np.expand_dims(obs, axis=0)
