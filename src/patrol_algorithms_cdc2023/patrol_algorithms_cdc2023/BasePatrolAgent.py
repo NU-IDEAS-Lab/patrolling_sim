@@ -112,7 +112,7 @@ class BasePatrolAgent(Node):
         # Timers.
         # These begin executing immediately.
         self.timerSendTelemetry = self.create_timer(
-            1.0, # period (seconds)
+            0.2, # period (seconds)
             self.onTimerSendTelemetry
         )
         self.timerAdvertizeReady = self.create_timer(
