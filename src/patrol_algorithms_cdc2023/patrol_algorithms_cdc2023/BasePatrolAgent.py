@@ -105,12 +105,18 @@ class BasePatrolAgent(Node):
         while rclpy.ok() and not self.tfBuffer.can_transform(self.tf_prefix + "map", self.tf_prefix + "base_link", rclpy.time.Time()):
             rclpy.spin_once(self)
         
+        # Get position once.
+        self.onTimerGetPosition()
 
         # Setup is complete.
         self.get_logger().info("Initialization complete.")
     
         # Timers.
         # These begin executing immediately.
+        self.timerGetPosition = self.create_timer(
+            0.1, # period (seconds)
+            self.onTimerGetPosition
+        )
         self.timerSendTelemetry = self.create_timer(
             0.2, # period (seconds)
             self.onTimerSendTelemetry
@@ -181,9 +187,8 @@ class BasePatrolAgent(Node):
     def onTimerGetPosition(self):
         ''' Called periodically to look up current position. '''
 
-        raise NotImplementedError()
         try:
-            t = self.tfBuffer.lookupTransform(
+            t = self.tfBuffer.lookup_transform(
                 self.tf_prefix + "base_link",
                 self.tf_prefix + "map",
                 rclpy.time.Time()
