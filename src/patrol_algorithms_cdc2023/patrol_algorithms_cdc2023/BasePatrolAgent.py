@@ -57,6 +57,9 @@ class BasePatrolAgent(Node):
         self.agentOrigins = self.graph.getOriginsFromInitialPoses(self.initialPoses)
         self.agentPositions = [(0.0, 0.0) for a in range(self.agent_count)]
 
+        initialPositions = [p for p in zip(self.initialPoses[0::2], self.initialPoses[1::2])]
+        self.get_logger().info(f"Agent {self.id} initial node: {self.agentOrigins[self.id]}, initial position: {initialPositions[self.id]}")
+
         # Subscribers.
         self.tfBuffer = Buffer()
         self.tfListener = TransformListener(self.tfBuffer, self)
@@ -189,8 +192,8 @@ class BasePatrolAgent(Node):
 
         try:
             t = self.tfBuffer.lookup_transform(
-                self.tf_prefix + "base_link",
                 self.tf_prefix + "map",
+                self.tf_prefix + "base_link",
                 rclpy.time.Time()
             )
         except TransformException as e:
