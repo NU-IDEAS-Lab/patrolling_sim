@@ -28,6 +28,7 @@ def _t2n(x):
 
 class PzAgent(BasePatrolAgent):
     def __init__(self):
+        self.pzReady = False
         super().__init__()
 
         # Set the model directory using a ROS 2 parameter.
@@ -121,6 +122,7 @@ class PzAgent(BasePatrolAgent):
         )
 
         self.get_logger().info(f"PZ agent initialize finished here")
+        self.pzReady = True
 
 
     def onReceiveIdleness(self, msg):
@@ -133,7 +135,8 @@ class PzAgent(BasePatrolAgent):
     def onReceiveTelemetry(self, msg):
         super().onReceiveTelemetry(msg)
 
-        self.agents[msg.sender].position = (msg.odom.pose.pose.position.x,
+        if self.pzReady:
+            self.agents[msg.sender].position = (msg.odom.pose.pose.position.x,
                                             msg.odom.pose.pose.position.y)
 
     
