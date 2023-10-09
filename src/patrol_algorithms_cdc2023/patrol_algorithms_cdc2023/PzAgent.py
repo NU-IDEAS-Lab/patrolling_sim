@@ -86,8 +86,11 @@ class PzAgent(BasePatrolAgent):
         self.env = PatrollingEnv(self.all_args)
 
         # Set initial nodes in environment.
-        for agent in self.env.env.agents:
+        for agent in self.env.env.possible_agents:
             agent.lastNode = self.agentOrigins[agent.id]
+        
+        # Create a local agents dictionary.
+        self.agentsDict = {agent.id: agent for agent in self.env.env.possible_agents}
 
         self.obs_space_orig = self.env.env.observation_spaces[self.env.env.possible_agents[self.id]]
         self.obs_space = self.env.observation_space[0]
@@ -138,16 +141,16 @@ class PzAgent(BasePatrolAgent):
     def onReceiveTelemetry(self, msg):
         super().onReceiveTelemetry(msg)
 
-        if self.pzReady and msg.sender in self.env.env.agents:
-            self.env.env.agents[msg.sender].position = (msg.odom.pose.pose.position.x / self.graph.resolution,
+        if self.pzReady and msg.sender in self.agentsDict:
+            self.agentsDict[msg.sender].position = (msg.odom.pose.pose.position.x / self.graph.resolution,
                                             msg.odom.pose.pose.position.y / self.graph.resolution)
 
 
-    def onAgentAttrition(self, agent):
-        super().onAgentAttrition(agent)
+    def onAgentAttrition(self, agentId):
+        super().onAgentAttrition(agentId)
 
-        self.get_logger().info(f"PZ agent {self.id} removing dead agent {agent} from environment")
-        self.env.env.agents.pop(agent)
+        self.get_logger().info(f"PZ agent {self.id} removing dead agent {agentId} from environment")
+        self.env.env.agents.remove(self.agentsDict[agentId])
 
 
     def onNavigationGoalSuccess(self):
@@ -156,8 +159,8 @@ class PzAgent(BasePatrolAgent):
         secsNow = self.get_clock().now().to_msg().sec
         self.env.env.pg.setNodeVisitTime(self.goalNode, secsNow)
 
-        self.env.env.agents[self.id].edge = None
-        self.env.env.agents[self.id].lastNode = self.goalNode
+        self.agentsDict[self.id].edge = None
+        self.agentsDict[self.id].lastNode = self.goalNode
         super().onNavigationGoalSuccess()
     
     def getNextNode(self):
@@ -229,11 +232,11 @@ class PzAgent(BasePatrolAgent):
             
             # Get path to the goal node.
             self.pzGoalNode = action
-            self.path = self.env.env._getPathToNode(self.env.env.agents[self.id], self.pzGoalNode)
+            self.path = self.env.env._getPathToNode(self.agentsDict[self.id], self.pzGoalNode)
         
         nextNode = self.path.pop(0)
-        self.env.env.agents[self.id].edge = (self.env.env.agents[self.id].lastNode, nextNode)
-        self.get_logger().info(f"PZ Agent {self.id} moving to node {nextNode} along edge {self.env.env.agents[self.id].edge} with idleness {self.env.env.pg.getNodeIdlenessTime(nextNode, secsNow):.2f}. Remaining path: {self.path}")
+        self.agentsDict[self.id].edge = (self.agentsDict[self.id].lastNode, nextNode)
+        self.get_logger().info(f"PZ Agent {self.id} moving to node {nextNode} along edge {self.agentsDict[self.id].edge} with idleness {self.env.env.pg.getNodeIdlenessTime(nextNode, secsNow):.2f}. Remaining path: {self.path}")
         return nextNode
         
 
