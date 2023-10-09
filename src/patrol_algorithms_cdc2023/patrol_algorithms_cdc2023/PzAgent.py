@@ -172,11 +172,12 @@ class PzAgent(BasePatrolAgent):
 
             self.get_logger().info(f"Agent {self.id} choosing new goal. Avg idleness: {np.mean(self.env.env.pg.getAverageIdlenessTime(self.env.env.step_count))}")
 
-            observations = {agent: self.env.env.observe(agent) for agent in self.env.env.agents}
+            observations = {agent: self.env.env.observe(agent, allow_done_agents=True) for agent in self.env.env.possible_agents}
             # if self.id == 0:
             #     self.get_logger().warn(f"Raw observation: {observations}")
             observations = self.env._obs_wrapper(observations)
             obs = observations[self.id]
+            # obs = self.env.env.observe(self.env.env.possible_agents[self.id], allow_done_agents=True)
 
             # if self.id == 0:
             #     self.get_logger().warn(f"Wrapped observation: {obs}")
