@@ -7,3 +7,9 @@
 
     # MSP-specific parameters.
     msp_file: ""
+
+/**/controller_server:
+  ros__parameters:
+    general_goal_checker:
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 6.28
