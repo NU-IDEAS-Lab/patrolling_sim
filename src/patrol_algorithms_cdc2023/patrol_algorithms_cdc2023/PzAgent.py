@@ -36,7 +36,8 @@ class PzAgent(BasePatrolAgent):
         # Set the model directory using a ROS 2 parameter.
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/3attritionNoCommsNoSkipAsyncAdjacency/wandb/run-20231008_162207-l8n539te/files") #TEST2
-        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncAdjacency/wandb/run-20231008_162207-ftmpttrx/files") #TEST3
+        # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncAdjacency/wandb/run-20231008_162207-ftmpttrx/files") #TEST3
+        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6SpAttritionYesCommsNoSkipAsyncAdjacency/wandb/run-20231009_100332-0w7n9mb0/files") #TEST4
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231008_152607-0532epuf/files")
         model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
