@@ -34,11 +34,13 @@ class PzAgent(BasePatrolAgent):
         super().__init__()
 
         # Set the model directory using a ROS 2 parameter.
-        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
+        # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/run-20231006_202648-p5johle2/files")
+        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/3attritionNoCommsNoSkipAsyncAdjacency/wandb/run-20231008_162207-l8n539te/files")
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
+        # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231008_152607-0532epuf/files")
         model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
 
-        self.get_logger().info(f"Here is the initialize of the PZ agent")
+        # self.get_logger().info(f"Here is the initialize of the PZ agent")
 
         # Set the allocation.
         # self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
@@ -75,17 +77,24 @@ class PzAgent(BasePatrolAgent):
         self.all_args.cuda_idx = 0
         self.all_args.graph_file = os.path.join(get_package_share_directory("patrolling_sim"), "models/maps/cumberland/cumberland_full_res.graph")
 
+        # self.all_args.communication_model = "none"
+        # self.all_args.communication_probability = 0.0
+        # self.all_args.observation_radius = np.inf
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
 
+        # Set initial nodes in environment.
+        for agent in self.env.env.agents:
+            agent.lastNode = self.agentOrigins[agent.id]
+
         self.obs_space = self.env.observation_space[0]
-        self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
-        self.get_logger().info("here finished the buildStateSpace")
-        self.get_logger().info(f"here is the size of obs space {len(self.obs_space.shape)}")
+        # self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
+        # self.get_logger().info("here finished the buildStateSpace")
+        # self.get_logger().info(f"here is the size of obs space {len(self.obs_space.shape)}")
 
         self.action_space = self.env.action_space[0]
-        self.get_logger().info("here finished the ActionSpace")
+        # self.get_logger().info("here finished the ActionSpace")
 
         self.recurrent_N = self.all_args.recurrent_N
         self.hidden_size = self.all_args.hidden_size
@@ -100,6 +109,8 @@ class PzAgent(BasePatrolAgent):
         self.rnn_states = np.zeros((1, 1, self.recurrent_N, self.hidden_size), dtype=np.float32)
         self.masks = np.ones((1, 1, 1), dtype=np.float32)
 
+        self.path = []
+
         # Subscribe to the /idleness topic.
         self.subIdleness = self.create_subscription(
             Float32MultiArray,
@@ -108,7 +119,7 @@ class PzAgent(BasePatrolAgent):
             100
         )
 
-        self.get_logger().info(f"PZ agent initialize finished here")
+        self.get_logger().info(f"PZ agent {self.id} initialization complete.")
         self.pzReady = True
 
 
@@ -129,47 +140,98 @@ class PzAgent(BasePatrolAgent):
             self.env.env.agents[msg.sender].position = (msg.odom.pose.pose.position.x / self.graph.resolution,
                                             msg.odom.pose.pose.position.y / self.graph.resolution)
 
+
+    def onAgentAttrition(self, agent):
+        super().onAgentAttrition(agent)
+
+        self.get_logger().info(f"PZ agent {self.id} removing dead agent {agent} from environment")
+        self.env.env.agents.pop(agent)
+
+
+    def onNavigationGoalSuccess(self):
+
+        # Set visit time.
+        secsNow = self.get_clock().now().to_msg().sec
+        self.env.env.pg.setNodeVisitTime(self.goalNode, secsNow)
+
+        self.env.env.agents[self.id].edge = None
+        self.env.env.agents[self.id].lastNode = self.goalNode
+        super().onNavigationGoalSuccess()
     
     def getNextNode(self):
         ''' Returns the next node to visit. '''
 
-        self.get_logger().info("here is the start of PZ Agent Action")
+        # self.get_logger().info("here is the start of PZ Agent Action")
 
-        # very hacky...
-        self.env.env.step_count = self.get_clock().now().to_msg().sec
+        # Get new goal node.
+        secsNow = self.get_clock().now().to_msg().sec
+        if len(self.path) == 0:
+            self.env.env.step_count = secsNow
+            # very hacky...
 
-        observations = {agent: self.env.env.observe(agent) for agent in self.env.env.agents}
-        observations = self.env._obs_wrapper(observations)
-        obs = observations[self.id]
+            self.get_logger().info(f"Agent {self.id} choosing new goal. Avg idleness: {np.mean(self.env.env.pg.getAverageIdlenessTime(self.env.env.step_count))}")
 
-        # from matplotlib import pyplot as plt
-        # bitmap = obs
-        # graphLayer = bitmap[:,:,2]
-        # graphNodes = graphLayer[np.where(graphLayer >= 0)]
-        # print(f"Sum of node layer: {np.sum(graphNodes)}")
-        # print(f"Expected sum of node layer: {sum(list(range(len(self.graph.graph.nodes))))}")
-        # agentLayer = bitmap[:,:,0]
-        # bitmap = self.env.env._minMaxNormalize(bitmap, a=0, b=255)
-        # bitmap[np.where(graphLayer >= 0)] = 255
-        # bitmap[np.where(agentLayer >= 0)] = 0
-        # plt.imsave(f"obs{self.id}.bmp", bitmap.astype(np.uint8))
+            observations = {agent: self.env.env.observe(agent) for agent in self.env.env.agents}
+            # if self.id == 0:
+            #     self.get_logger().warn(f"Raw observation: {observations}")
+            observations = self.env._obs_wrapper(observations)
+            obs = observations[self.id]
+
+            # if self.id == 0:
+            #     self.get_logger().warn(f"Wrapped observation: {obs}")
+
+            # from matplotlib import pyplot as plt
+            # # bitmap = self.env.env.observe(self.env.env.agents[0], radius=200)
+            # bitmap = obs
+            # graphLayer = bitmap[:,:,2]
+            # graphNodes = graphLayer[np.where(graphLayer >= 0)]
+            # self.get_logger().info(f"Sum of node layer: {np.sum(graphNodes)}")
+            # self.get_logger().info(f"Expected sum of node layer: {sum(list(range(len(self.env.env.pg.graph.nodes))))}")
+
+            # agentLayer = bitmap[:,:,0]
+            # agents = agentLayer[np.where(agentLayer >= 0)]
+
+            # if bitmap[0,0,0] != self.id:
+            #     self.get_logger().error(f"Agent ID {bitmap[0,0,0]} does not match expected ID {self.id}!")
+
+            # self.get_logger().info(f"Sum of agent layer: {np.sum(agents)}")
+            # self.get_logger().info(f"Expected sum of agent layer: {sum(list(range(self.agent_count)))}")
+            # if np.sum(agents) != sum(list(range(self.agent_count))) + self.id:
+            #     self.get_logger().error(f"Agent layer does not match expected sum!")
 
 
-        # self.get_logger().info("here is the start of PZ Agent Action process")
-        # self.obs_space_new = spaces.Dict(self.t)
-        self.get_logger().info("here is the start of PZ Agent Action process")
-        if self.env.flatten_observations:
-            obs = flatten(self.obs_space, obs)
-            obs = obs.reshape((1,-1))
-        else:
-            obs = np.expand_dims(obs, axis=0)
-        self.get_logger().info(f"here is the shape of obs of input rnn {obs.shape}, {self.rnn_states[:,0].shape}, {self.masks[:,0].shape}")
-        action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
-        action = action.item()
-        self.get_logger().info("here is the mid process")
-        self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
-        self.get_logger().info(f"the action of PZ Agent Action {action}")
-        return action
+            # bitmap = self.env.env._minMaxNormalize(bitmap, a=0, b=255)
+            # bitmap[np.where(graphLayer >= 0)] = 255
+            # bitmap[np.where(agentLayer >= 0)] = 0
+            # plt.imshow(bitmap, aspect="equal")
+            # # save image using pyplot
+            # plt.savefig(f"obs_{self.id}_{self.env.env.step_count}.png")
+
+
+            # self.get_logger().info("here is the start of PZ Agent Action process")
+            # self.obs_space_new = spaces.Dict(self.t)
+            # self.get_logger().info("here is the start of PZ Agent Action process")
+            if self.env.flatten_observations:
+                obs = flatten(self.obs_space, obs)
+                obs = obs.reshape((1,-1))
+            else:
+                obs = np.expand_dims(obs, axis=0)
+            # self.get_logger().info(f"here is the shape of obs of input rnn {obs.shape}, {self.rnn_states[:,0].shape}, {self.masks[:,0].shape}")
+            action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
+            action = action.item()
+            # self.get_logger().info("here is the mid process")
+            self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
+            # self.get_logger().info(f"the action of PZ Agent Action {action}")
+            
+            # Get path to the goal node.
+            self.pzGoalNode = action
+            self.path = self.env.env._getPathToNode(self.env.env.agents[self.id], self.pzGoalNode)
+        
+        nextNode = self.path.pop(0)
+        self.env.env.agents[self.id].edge = (self.env.env.agents[self.id].lastNode, nextNode)
+        self.get_logger().info(f"PZ Agent {self.id} moving to node {nextNode} along edge {self.env.env.agents[self.id].edge} with idleness {self.env.env.pg.getNodeIdlenessTime(nextNode, secsNow):.2f}. Remaining path: {self.path}")
+        return nextNode
+        
 
 
 def main(args=None):

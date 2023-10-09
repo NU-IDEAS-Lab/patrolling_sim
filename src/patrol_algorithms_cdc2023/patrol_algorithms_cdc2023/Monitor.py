@@ -200,6 +200,7 @@ class MonitorNode(Node):
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
         self.graph.setNodeVisitTime(node, timeElapsed.nanoseconds / 1.0e9)
+        self.get_logger().info(f"Agent {agent} reached node {node} at time {timeElapsed.nanoseconds / 1.0e9}.")
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
@@ -221,7 +222,7 @@ class MonitorNode(Node):
         secondsElapsed = (self.get_clock().now() - self.timeStart).nanoseconds / 1.0e9 #seconds to ns
 
         msg = Float32MultiArray()
-        msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in self.graph.graph.nodes()]
+        msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in range(self.graph.graph.number_of_nodes())]
         self.pubIdleness.publish(msg)
     
     def onTimerAttrition(self):
