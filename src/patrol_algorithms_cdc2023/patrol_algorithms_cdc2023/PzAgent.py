@@ -89,6 +89,7 @@ class PzAgent(BasePatrolAgent):
         for agent in self.env.env.agents:
             agent.lastNode = self.agentOrigins[agent.id]
 
+        self.obs_space_orig = self.env.env.observation_spaces[self.env.env.possible_agents[self.id]]
         self.obs_space = self.env.observation_space[0]
         # self.get_logger().info(f"the type of obs_space is {self.obs_space.__class__.__name__}")
         # self.get_logger().info("here finished the buildStateSpace")
@@ -172,12 +173,12 @@ class PzAgent(BasePatrolAgent):
 
             self.get_logger().info(f"Agent {self.id} choosing new goal. Avg idleness: {np.mean(self.env.env.pg.getAverageIdlenessTime(self.env.env.step_count))}")
 
-            observations = {agent: self.env.env.observe(agent, allow_done_agents=True) for agent in self.env.env.possible_agents}
+            # observations = {agent: self.env.env.observe(agent, allow_done_agents=False) for agent in self.env.env.possible_agents}
             # if self.id == 0:
             #     self.get_logger().warn(f"Raw observation: {observations}")
-            observations = self.env._obs_wrapper(observations)
-            obs = observations[self.id]
-            # obs = self.env.env.observe(self.env.env.possible_agents[self.id], allow_done_agents=True)
+            # observations = self.env._obs_wrapper(observations)
+            # obs = observations[self.id]
+            obs = self.env.env.observe(self.env.env.possible_agents[self.id], allow_done_agents=False)
 
             # if self.id == 0:
             #     self.get_logger().warn(f"Wrapped observation: {obs}")
@@ -214,7 +215,8 @@ class PzAgent(BasePatrolAgent):
             # self.obs_space_new = spaces.Dict(self.t)
             # self.get_logger().info("here is the start of PZ Agent Action process")
             if self.env.flatten_observations:
-                obs = flatten(self.obs_space, obs)
+                # self.get_logger().warn(f"{type(self.obs_space)}, {type(obs)}, OBS SPACE: {self.obs_space}, OBS: {obs}")
+                obs = flatten(self.obs_space_orig, obs)
                 obs = obs.reshape((1,-1))
             else:
                 obs = np.expand_dims(obs, axis=0)
