@@ -15,7 +15,7 @@ import zarr
 from patrolling_sim_interfaces.msg import AgentTelemetry
 from std_msgs.msg import Int16MultiArray
 
-from patrol_algorithms_cdc2023.PatrolGraph import PatrolGraph
+from patrol_algorithms_ahpa.PatrolGraph import PatrolGraph
 
 class MonitorNode(Node):
     MSG_TYPES = {

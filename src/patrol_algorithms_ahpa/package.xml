@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>patrol_algorithms_cdc2023</name>
+  <name>patrol_algorithms_ahpa</name>
   <version>0.0.0</version>
   <description>Algorithm implementations for the CDC 2023 paper.</description>
   <maintainer email="anthony.goeckner@northwestern.edu">Anthony Goeckner</maintainer>

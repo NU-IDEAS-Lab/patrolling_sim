@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'patrol_algorithms_cdc2023'
+package_name = 'patrol_algorithms_ahpa'
 
 setup(
     name=package_name,
@@ -20,9 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'monitor = patrol_algorithms_cdc2023.Monitor:main',
-            'BasePatrolAgent = patrol_algorithms_cdc2023.BasePatrolAgent:main',
-            'AHPA = patrol_algorithms_cdc2023.AhpaAgent:main'
+            'monitor = patrol_algorithms_ahpa.Monitor:main',
+            'BasePatrolAgent = patrol_algorithms_ahpa.BasePatrolAgent:main',
+            'AHPA = patrol_algorithms_ahpa.AhpaAgent:main'
         ],
     },
 )

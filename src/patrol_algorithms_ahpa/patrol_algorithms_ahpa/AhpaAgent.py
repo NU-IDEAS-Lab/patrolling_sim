@@ -1,7 +1,7 @@
 import networkx as nx
 import rclpy
 
-from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
+from patrol_algorithms_ahpa.BasePatrolAgent import BasePatrolAgent
 
 
 class AhpaAgent(BasePatrolAgent):

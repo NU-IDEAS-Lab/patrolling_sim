@@ -18,7 +18,7 @@ def generate_launch_description():
 
     startMonitorAction = Node(
         # package="monitoring_control",
-        package="patrol_algorithms_cdc2023",
+        package="patrol_algorithms_ahpa",
         executable="monitor",
         name="monitor",
         exec_name="monitor"
