@@ -15,7 +15,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(patrolling_sim REQUIRED)
 find_package(patrolling_sim_interfaces REQUIRED)
 
 include_directories(src include)
@@ -27,12 +26,19 @@ include_directories(src include)
 # Add libraries.
 ########################################
 
+# Build GetGraph library.
+add_library(GetGraph
+  src/getgraph.cpp
+)
+ament_target_dependencies(GetGraph rclcpp)
+
 add_library(PatrolAgent
   src/PatrolAgent.cpp
   src/algorithms.cpp
   src/config.cpp
 )
-ament_target_dependencies(PatrolAgent patrolling_sim rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
+ament_target_dependencies(PatrolAgent  rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
+target_link_libraries(PatrolAgent GetGraph) # use this instead of ament_target_dependencies since GetGraph is in the same package.
 
 add_library(SSIPatrolAgent
   src/SSIPatrolAgent.cpp
@@ -44,7 +50,18 @@ target_link_libraries(SSIPatrolAgent PatrolAgent) # use this instead of ament_ta
 target_include_directories(PatrolAgent
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+    $<INSTALL_INTERFACE:include>
+)
+target_include_directories(SSIPatrolAgent
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_include_directories(GetGraph
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
 ########################################
 # Add an executable for each algorithm.
@@ -106,13 +123,14 @@ install(
 )
 
 # Install libraries.
-ament_export_targets(PatrolAgent HAS_LIBRARY_TARGET)
-ament_export_dependencies(patrolling_sim rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
+ament_export_targets(export_patrol_algorithms_base HAS_LIBRARY_TARGET)
+ament_export_dependencies(rclcpp rclcpp_action tf2 tf2_ros geometry_msgs std_msgs nav_msgs nav2_msgs patrolling_sim_interfaces)
 install(
   TARGETS
     PatrolAgent
     SSIPatrolAgent
-  EXPORT PatrolAgent
+    GetGraph
+  EXPORT export_patrol_algorithms_base
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin

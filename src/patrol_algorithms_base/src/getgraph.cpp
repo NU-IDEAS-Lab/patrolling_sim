@@ -38,7 +38,7 @@
 #include <stdexcept>
 #include "rclcpp/rclcpp.hpp"
 
-#include "patrolling_sim/getgraph.h"
+#include "patrol_algorithms_base/getgraph.h"
 
 uint WIDTH_PX;
 uint HEIGHT_PX;
