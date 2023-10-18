@@ -1,3 +1,4 @@
+from ast import literal_eval
 import os
 import rclpy
 from rclpy.action import ActionClient
@@ -30,7 +31,7 @@ class BasePatrolAgent(Node):
         # Parameters.
         self.declare_parameter("id_robot", 0)
         self.declare_parameter("patrol_graph_file", "/home/anthony/idev/patrolling_sim/src/patrolling_sim/models/maps/cumberland/cumberland.graph")
-        self.declare_parameter("initial_poses", [0.0, 0.0])
+        self.declare_parameter("initial_poses", "[0.0, 0.0]")
         self.declare_parameter("initial_pos.x", 0.0)
         self.declare_parameter("initial_pos.y", 0.0)
         self.declare_parameter("goal_reached_wait", 3.0)
@@ -39,7 +40,7 @@ class BasePatrolAgent(Node):
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("tf_prefix", "")
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
-        self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
+        self.initialPoses = literal_eval(self.get_parameter("initial_poses").get_parameter_value().string_value)
         self.goal_reached_wait = self.get_parameter("goal_reached_wait").get_parameter_value().double_value
         self.communication_delay = self.get_parameter("communication_delay").get_parameter_value().double_value
         self.lost_message_rate = self.get_parameter("lost_message_rate").get_parameter_value().double_value

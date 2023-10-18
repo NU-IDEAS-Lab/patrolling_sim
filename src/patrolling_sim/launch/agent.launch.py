@@ -58,10 +58,10 @@ def generate_agent(context: LaunchContext, id_subst, agent_count_subst, map_subs
         GroupAction(
             actions = [
                 # Set parameters.
-                SetParameter(name="id_robot", value=str(agent_id)),
-                SetParameter(name="initial_pos.x", value=str(initPoses[agent_id * 2])),
-                SetParameter(name="initial_pos.y", value=str(initPoses[agent_id * 2 + 1])),
-                SetParameter(name="initial_poses", value=str(initPosesFloat)),
+                SetParameter(name="id_robot", value=agent_id),
+                SetParameter(name="initial_pos.x", value=initPosesFloat[agent_id * 2]),
+                SetParameter(name="initial_pos.y", value=initPosesFloat[agent_id * 2 + 1]),
+                SetParameter(name="initial_poses", value="'" + str(initPosesFloat) + "'"),
                 SetParameter(name="tf_prefix", value=f"agent{agent_id}/"),
 
                 # Include the robot launch file.
