@@ -3,6 +3,9 @@ import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
+
+from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
+
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -68,31 +71,31 @@ class BasePatrolAgent(Node):
             AgentTelemetry,
             "/positions",
             self.onReceiveTelemetry,
-            100
+            qos_profile_sensor_data
         )
         self.subOdom = self.create_subscription(
             Odometry,
             "odom",
             self.onReceiveOdometry,
-            100
+            qos_profile_sensor_data
         )
         self.subResults = self.create_subscription(
             Int16MultiArray,
             "/results",
             self.onReceiveResults,
-            100
+            qos_profile_parameters
         )
 
         # Publishers.
         self.pubTelemetry = self.create_publisher(
             AgentTelemetry,
             "/positions",
-            100
+            qos_profile_sensor_data
         )
         self.pubResults = self.create_publisher(
             Int16MultiArray,
             "/results",
-            100
+            qos_profile_parameters
         )
 
         # Action clients.
