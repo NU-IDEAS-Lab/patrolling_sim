@@ -92,7 +92,9 @@ def generate_launch_description():
             ]),
             launch_arguments={
                 "map": LaunchConfiguration("map"),
-                "gazebo_world_file": [FindPackageShare("grex"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"],
+                "map_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), ".yaml"],
+                "gazebo_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), ".sdf"],
+                "flatland_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), "_flatland.yaml"],
                 "agent_launch_file": [FindPackageShare("patrolling_sim"), "/launch/agent.launch.py"],
             }.items()
         ),
