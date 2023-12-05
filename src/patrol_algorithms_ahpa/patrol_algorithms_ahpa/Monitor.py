@@ -1,3 +1,4 @@
+from ast import literal_eval
 import datetime
 import networkx as nx
 import numpy as np
@@ -33,7 +34,7 @@ class MonitorNode(Node):
         self.declare_parameter("map", "cumberland")
         self.declare_parameter("patrol_graph_file", "/home/anthony/dev/patrolling_sim/src/patrolling_sim/models/maps/cumberland/cumberland.graph")
         self.declare_parameter("output_file", "./results.zarr")
-        self.declare_parameter("initial_poses", [0.0, 0.0])
+        self.declare_parameter("initial_poses", "[0.0, 0.0]")
         self.declare_parameter("attrition_times", "")
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
@@ -41,7 +42,7 @@ class MonitorNode(Node):
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
         self.outputFilePath = self.get_parameter("output_file").get_parameter_value().string_value
-        self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
+        self.initialPoses = literal_eval(self.get_parameter("initial_poses").get_parameter_value().string_value)
         self.attritionTimes = self.get_parameter("attrition_times").get_parameter_value().string_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
