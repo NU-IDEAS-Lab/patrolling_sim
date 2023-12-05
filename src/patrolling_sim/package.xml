@@ -12,7 +12,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>simulation_base</exec_depend>
+  <exec_depend>grex</exec_depend>
 
   <depend>rclcpp</depend>
 
