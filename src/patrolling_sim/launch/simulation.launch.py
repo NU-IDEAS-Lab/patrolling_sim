@@ -92,6 +92,7 @@ def generate_launch_description():
             ]),
             launch_arguments={
                 "map": LaunchConfiguration("map"),
+                "map_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), ".yaml"],
                 "flatland_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), "_flatland.yaml"],
                 "gazebo_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"],
                 "agent_launch_file": [FindPackageShare("patrolling_sim"), "/launch/agent.launch.py"],
