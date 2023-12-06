@@ -1,10 +1,11 @@
+from ast import literal_eval
 import datetime
 import networkx as nx
 import numpy as np
 import os
 import rclpy
 from rclpy.node import Node
-# from rclpy.qos import qos_profile_default
+from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -14,6 +15,8 @@ import zarr
 
 from patrolling_sim_interfaces.msg import AgentTelemetry
 from std_msgs.msg import Int16MultiArray, Float32MultiArray
+from geometry_msgs.msg import Point
+from visualization_msgs.msg import MarkerArray, Marker
 
 from patrol_algorithms_cdc2023.PatrolGraph import PatrolGraph
 
@@ -33,7 +36,7 @@ class MonitorNode(Node):
         self.declare_parameter("map", "cumberland")
         self.declare_parameter("patrol_graph_file", "/home/anthony/dev/patrolling_sim/src/patrolling_sim/models/maps/cumberland/cumberland.graph")
         self.declare_parameter("output_file", "./results.zarr")
-        self.declare_parameter("initial_poses", [0.0, 0.0])
+        self.declare_parameter("initial_poses", "[0.0, 0.0]")
         self.declare_parameter("attrition_times", "")
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
@@ -41,7 +44,7 @@ class MonitorNode(Node):
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
         self.outputFilePath = self.get_parameter("output_file").get_parameter_value().string_value
-        self.initialPoses = self.get_parameter("initial_poses").get_parameter_value().double_array_value
+        self.initialPoses = literal_eval(self.get_parameter("initial_poses").get_parameter_value().string_value)
         self.attritionTimes = self.get_parameter("attrition_times").get_parameter_value().string_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
@@ -98,7 +101,7 @@ class MonitorNode(Node):
             Int16MultiArray,
             "/results",
             self.onReceiveResults,
-            100
+            qos_profile_parameters
         )
 
         # Publishers.
@@ -110,12 +113,28 @@ class MonitorNode(Node):
         self.pubResults = self.create_publisher(
             Int16MultiArray,
             "/results",
-            100
+            qos_profile_parameters
         )
         self.pubIdleness = self.create_publisher(
             Float32MultiArray,
             "/idleness",
-            100
+            qos_profile_sensor_data
+        )
+        self.pubMarkerNodes = self.create_publisher(
+            MarkerArray,
+            "/visualization_marker_array",
+            10
+        )
+        self.pubMarkerEdges = self.create_publisher(
+            MarkerArray,
+            "/visualization_marker_array",
+            10
+        )
+
+        # Create timers.
+        self.timerSendMarkers = self.create_timer(
+            2.0, # period (seconds)
+            self.onTimerSendMarkers
         )
 
         # Wait for initialization.
@@ -225,6 +244,66 @@ class MonitorNode(Node):
         msg.data = [self.graph.getNodeIdlenessTime(node, secondsElapsed) for node in range(self.graph.graph.number_of_nodes())]
         self.pubIdleness.publish(msg)
     
+    def onTimerSendMarkers(self):
+        ''' Publishes Marker information for rviz. '''
+
+        msg = MarkerArray()
+
+        # Create node marker.
+        nodes = Marker()
+        nodes.header.frame_id = "map"
+        nodes.header.stamp = self.get_clock().now().to_msg()
+        nodes.ns = "nodes"
+        nodes.id = 0
+        nodes.type = Marker.POINTS
+        nodes.action = Marker.ADD
+        nodes.pose.orientation.w = 1.0
+        nodes.scale.x = 0.1
+        nodes.scale.y = 0.1
+        nodes.color.r = 1.0
+        nodes.color.a = 1.0
+        nodes.points = []
+        for node in self.graph.graph.nodes():
+            pos = self.graph.getNodePosition(node)
+            p = Point()
+            p.x = pos[0]
+            p.y = pos[1]
+            p.z = 0.1
+            nodes.points.append(p)
+        msg.markers.append(nodes)
+
+        # Create edge marker.
+        edges = Marker()
+        edges.header.frame_id = "map"
+        edges.header.stamp = self.get_clock().now().to_msg()
+        edges.ns = "edges"
+        edges.id = 0
+        edges.type = Marker.LINE_LIST
+        edges.action = Marker.ADD
+        edges.pose.orientation.w = 1.0
+        edges.scale.x = 0.05
+        edges.color.g = 1.0
+        edges.color.a = 1.0
+        edges.points = []
+        for edge in self.graph.graph.edges():
+            pos1 = self.graph.getNodePosition(edge[0])
+            pos2 = self.graph.getNodePosition(edge[1])
+            p1 = Point()
+            p1.x = pos1[0]
+            p1.y = pos1[1]
+            p1.z = 0.1
+            p2 = Point()
+            p2.x = pos2[0]
+            p2.y = pos2[1]
+            p2.z = 0.1
+            edges.points.append(p1)
+            edges.points.append(p2)
+        msg.markers.append(edges)
+
+        # Publish the markers.
+        self.pubMarkerNodes.publish(msg)
+
+
     def onTimerAttrition(self):
         ''' Kills agent after time limit. '''
 
