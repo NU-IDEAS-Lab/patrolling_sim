@@ -190,6 +190,10 @@ class MonitorNode(Node):
         msgType = msg.data[1]
         if sender != -1:
             if msgType == self.MSG_TYPES["INITIALIZE_MSG_TYPE"]:
+                if self.agentInitialized[sender] != 1 and msg.data[2] == 1:
+                    self.get_logger().info(f"Agent {sender} initialized.")
+                if self.agentInitialized[sender] == 1 and msg.data[2] != 1:
+                    self.get_logger().warn(f"Agent {sender} is no longer ready!")
                 self.agentInitialized[sender] = msg.data[2]
 
             elif msgType == self.MSG_TYPES["TARGET_REACHED_MSG_TYPE"]:
