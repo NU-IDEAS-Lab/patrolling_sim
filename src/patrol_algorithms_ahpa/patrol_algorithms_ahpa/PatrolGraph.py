@@ -170,4 +170,5 @@ class PatrolGraph():
                 for j in self.graph.neighbors(i):
                     file.write(f"{j}\n")
                     file.write("S\n")
-                    file.write(f"{self.graph.edges[i, j]['weight']}\n")
+                    # Why do we convert to int first? Well, that's what the original patrolling_sim did...
+                    file.write(f"{int(round(self.graph.edges[i, j]['weight'] / self.resolution))}\n")
