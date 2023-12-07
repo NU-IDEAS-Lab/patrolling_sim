@@ -218,6 +218,7 @@ class MonitorNode(Node):
         self.visitTimes.append(timeElapsed.nanoseconds)
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
+        self.get_logger().info(f"Agent {agent} reached node {node} at time {timeElapsed.nanoseconds}.")
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
