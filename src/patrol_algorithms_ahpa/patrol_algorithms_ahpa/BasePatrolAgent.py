@@ -213,7 +213,7 @@ class BasePatrolAgent(Node):
 
         msg = AgentTelemetry()
         msg.sender = self.id
-        msg.odom.header.frame_id = f"agent{self.id}/map"
+        msg.odom.header.frame_id = f"{self.tf_prefix}map"
         msg.odom.pose.pose.position.x = self.agentPositions[self.id][0]
         msg.odom.pose.pose.position.y = self.agentPositions[self.id][1]
         self.pubTelemetry.publish(msg)
