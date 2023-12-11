@@ -28,8 +28,10 @@ class MonitorNode(Node):
         "AGENT_ATTRITION_MSG_TYPE": 13
     }
 
+    TIMEOUT_AGENT_ONLINE_NS = 2e9 #nanoseconds
+
     def __init__(self):
-        super().__init__("PatrolAgent")
+        super().__init__("Monitor")
         
         # Parameters.
         self.declare_parameter("algorithm_name", "Random")
@@ -66,6 +68,8 @@ class MonitorNode(Node):
         self.commsTimes = []
         self.attritionList = []
         self.agentsRemaining = set(range(self.agent_count))
+        self.agentLastTelemetryTime = [self.get_clock().now() for _ in range(self.agent_count)]
+        self.onlineAgentsPrev = []
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -91,12 +95,12 @@ class MonitorNode(Node):
         # Subscribers.
         self.tfBuffer = Buffer()
         self.tfListener = TransformListener(self.tfBuffer, self)
-        # self.subTelemetry = self.create_subscription(
-        #     AgentTelemetry,
-        #     "/positions",
-        #     self.onReceiveTelemetry,
-        #     100
-        # )
+        self.subTelemetry = self.create_subscription(
+            AgentTelemetry,
+            "/positions",
+            self.onReceiveTelemetry,
+            qos_profile_sensor_data
+        )
         self.subResults = self.create_subscription(
             Int16MultiArray,
             "/results",
@@ -105,11 +109,6 @@ class MonitorNode(Node):
         )
 
         # Publishers.
-        # self.pubTelemetry = self.create_publisher(
-        #     AgentTelemetry,
-        #     "/positions",
-        #     100
-        # )
         self.pubResults = self.create_publisher(
             Int16MultiArray,
             "/results",
@@ -135,6 +134,10 @@ class MonitorNode(Node):
         self.timerSendMarkers = self.create_timer(
             2.0, # period (seconds)
             self.onTimerSendMarkers
+        )
+        self.timerReportOnlineAgents = self.create_timer(
+            5.0, # period (seconds)
+            self.onTimerReportOnlineAgents
         )
 
         # Wait for initialization.
@@ -210,6 +213,7 @@ class MonitorNode(Node):
             msg.odom.pose.pose.position.x,
             msg.odom.pose.pose.position.y
         )
+        self.agentLastTelemetryTime[msg.sender] = self.get_clock().now()
 
     def onAgentReachedNode(self, agent, node):
         ''' Called when agent reaches a node. Record data here. '''
@@ -322,6 +326,19 @@ class MonitorNode(Node):
                 duration, # period (seconds)
                 self.onTimerAttrition
             )
+
+
+    def onTimerReportOnlineAgents(self):
+        ''' Reports online agents. '''
+
+        online = []
+        timeNow = self.get_clock().now()
+        for agent in range(self.agent_count):
+            if (timeNow - self.agentLastTelemetryTime[agent]).nanoseconds < self.TIMEOUT_AGENT_ONLINE_NS:
+                online.append(agent)
+        if online != self.onlineAgentsPrev:
+            self.get_logger().info(f"Online agents: {online}")
+            self.onlineAgentsPrev = online
 
 
     def perfromAgentAttrition(self, agent):
