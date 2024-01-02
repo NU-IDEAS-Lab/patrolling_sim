@@ -12,7 +12,7 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>simulation_base</exec_depend>
+  <exec_depend>grex</exec_depend>
 
   <depend>rclcpp</depend>
 
@@ -21,5 +21,7 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+    <gazebo_ros gazebo_media_path="${prefix}/models"/>
   </export>
 </package>

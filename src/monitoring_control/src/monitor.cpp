@@ -52,7 +52,7 @@
 
 using namespace std;
 
-#include "patrolling_sim/getgraph.h"
+#include "patrol_algorithms_base/getgraph.h"
 #include "patrolling_sim_interfaces/message_types.h"
 #include "patrolling_sim_interfaces/srv/go_to_start_pos_srv.hpp"
 

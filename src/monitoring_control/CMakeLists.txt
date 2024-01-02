@@ -9,12 +9,12 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(patrolling_sim REQUIRED)
+find_package(patrol_algorithms_base REQUIRED)
 find_package(patrolling_sim_interfaces REQUIRED)
 
 # Build the monitor executable and link against dependencies.
 add_executable(monitor src/monitor.cpp)
-ament_target_dependencies(monitor rclcpp std_msgs patrolling_sim patrolling_sim_interfaces)
+ament_target_dependencies(monitor rclcpp std_msgs patrol_algorithms_base patrolling_sim_interfaces)
 
 install(TARGETS monitor
   DESTINATION lib/${PROJECT_NAME})
