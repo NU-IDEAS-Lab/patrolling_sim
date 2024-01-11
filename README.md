@@ -1,8 +1,8 @@
 # patrolling_sim
-Fork of https://github.com/davidbsp/patrolling_sim
+This began as a fork of [David Portugal's patrolling_sim](https://github.com/davidbsp/patrolling_sim), but has evolved into a rewrite of the original. This version makes use of the [Grex Machina multi-agent framework](https://github.com/NU-IDEAS-Lab/grex) and ROS 2, allowing for far more capabilities than the original patrolling_sim.
 
 # Prerequisites
-First install all prerequisites of the [mas_simulation](https://github.com/NU-IDEAS-Lab/mas_simulation) repository.
+First install all prerequisites of the [Grex Machina](https://github.com/NU-IDEAS-Lab/grex) repository.
 
 Then, perform the following:
 
@@ -35,7 +35,7 @@ Once prerequisites are installed, perform the following:
  4) Build the patrolling sim using Colcon, the ROS 2 build system.
 
     ```bash
-    colcon build --allow-overriding gazebo_ros
+    colcon build
     ```
 
  5) Follow instructions below to run the simulation.
