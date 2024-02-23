@@ -18,7 +18,7 @@ def generate_launch_description():
 
     startMonitorAction = Node(
         # package="monitoring_control",
-        package="patrol_algorithms_cdc2023",
+        package="patrol_algorithms_ahpa",
         executable="monitor",
         name="monitor",
         exec_name="monitor"
@@ -93,8 +93,8 @@ def generate_launch_description():
             launch_arguments={
                 "map": LaunchConfiguration("map"),
                 "map_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), ".yaml"],
-                "gazebo_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), ".sdf"],
                 "flatland_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/", LaunchConfiguration("map"), "_flatland.yaml"],
+                "gazebo_world_file": [FindPackageShare("patrolling_sim"), "/models/maps/", LaunchConfiguration("map"), "/model.sdf"],
                 "agent_launch_file": [FindPackageShare("patrolling_sim"), "/launch/agent.launch.py"],
             }.items()
         ),
