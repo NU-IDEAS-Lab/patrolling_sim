@@ -11,7 +11,7 @@
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
-  <depend>patrolling_sim</depend>
+  <depend>patrol_algorithms_base</depend>
   <depend>patrolling_sim_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
