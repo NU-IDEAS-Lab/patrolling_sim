@@ -14,7 +14,7 @@ import yaml
 
 from std_msgs.msg import Float32MultiArray
 
-from patrol_algorithms_cdc2023.BasePatrolAgent import BasePatrolAgent
+from patrol_algorithms_ahpa.BasePatrolAgent import BasePatrolAgent
 
 from patrolling_zoo.env.patrolling_zoo import PatrolAgent as PzPatrolAgent
 from patrolling_zoo.env.patrolling_zoo import parallel_env as pz_parallel_env
