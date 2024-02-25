@@ -45,6 +45,9 @@ def generate_launch_description():
             'attrition_times', default_value="-1.0,-1.0"
         ),
         DeclareLaunchArgument(
+            'agent_policy_dir', default_value=''
+        ),
+        DeclareLaunchArgument(
             'params_file',
             default_value=PathJoinSubstitution([
                 FindPackageShare('patrolling_sim'),
@@ -69,6 +72,7 @@ def generate_launch_description():
         SetParameter(name="map", value=LaunchConfiguration("map")),
         SetParameter(name="output_file", value=LaunchConfiguration("output")),
         SetParameter(name="attrition_times", value=LaunchConfiguration("attrition_times")),
+        SetParameter(name="agent_policy_dir", value=LaunchConfiguration("agent_policy_dir")),
         SetParameter(
             name="patrol_graph_file",
             value=[

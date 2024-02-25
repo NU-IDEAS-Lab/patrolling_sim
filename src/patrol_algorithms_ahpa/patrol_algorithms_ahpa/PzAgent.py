@@ -39,8 +39,8 @@ class PzAgent(BasePatrolAgent):
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncAdjacency/wandb/run-20231008_162207-ftmpttrx/files") #TEST3
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6SpAttritionYesCommsNoSkipAsyncAdjacency/wandb/run-20231009_100332-0w7n9mb0/files") #TEST4
         # self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/patrolling_zoo/onpolicy/scripts/results/Patrolling/cumberland/rmappo/1attritionYesComms01SkipAsyncBitmap2/wandb/run-20231007_220950-wlz4r9v5/files")
-        self.declare_parameter("model_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncBitmap2/wandb/run-20231008_155309-f4gvl2ju/files")
-        model_dir = self.get_parameter("model_dir").get_parameter_value().string_value
+        self.declare_parameter("agent_policy_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncBitmap2/wandb/run-20231008_155309-f4gvl2ju/files")
+        model_dir = self.get_parameter("agent_policy_dir").get_parameter_value().string_value
 
         # self.get_logger().info(f"Here is the initialize of the PZ agent")
 
@@ -68,12 +68,12 @@ class PzAgent(BasePatrolAgent):
 
         
         # Check args.
-        if self.all_args.num_agents != self.agent_count and self.all_args.observe_method != "bitmap2":
-            # We can easily avoid this problem if we use the bitmap2 observation mode.
-            raise ValueError(f"Number of agents in the environment ({self.agent_count}) does not match the number of agents in the model ({self.all_args.num_agents})!")
+        # if self.all_args.num_agents != self.agent_count and self.all_args.observe_method != "bitmap2":
+        #     # We can easily avoid this problem if we use the bitmap2 observation mode.
+        #     raise ValueError(f"Number of agents in the environment ({self.agent_count}) does not match the number of agents in the model ({self.all_args.num_agents})!")
 
 
-        # Set required specific argument
+        # Set required specific arguments.
         self.all_args.use_wandb = False
         self.all_args.model_dir = model_dir
         self.all_args.cuda_idx = 0
@@ -81,7 +81,7 @@ class PzAgent(BasePatrolAgent):
 
         # self.all_args.communication_model = "none"
         # self.all_args.communication_probability = 0.0
-        self.all_args.observation_radius = np.inf
+        # self.all_args.observation_radius = np.inf
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
@@ -108,7 +108,8 @@ class PzAgent(BasePatrolAgent):
         # for name, layer in self.actor.named_children():
         #     self.get_logger().info(f"here is name {name} and layer {layer}")
 
-        checkpoint = torch.load(os.path.join(model_dir, f"actor_agent{self.id}.pt"), map_location=torch.device("cpu"))
+        # checkpoint = torch.load(os.path.join(model_dir, f"actor_agent{self.id}.pt"), map_location=torch.device("cpu"))
+        checkpoint = torch.load(os.path.join(model_dir, f"actor.pt"), map_location=torch.device("cpu"))
 
         # self.get_logger().info(f"here is the type of checkpoint {type(checkpoint)}")
         self.actor.load_state_dict(checkpoint)

@@ -9,16 +9,18 @@
 
 # ros2 doctor --report
 
-AGENTS=1
+AGENTS=2
 RUNTIME=4000
-STEP_SIZE=0.1
+STEP_SIZE=0.005
+UPDATE_RATE=400.0
 OUTPUT_FILE="$HOME/papers/aamas2024/sim_results/test_debugging.zarr"
 ATTRITION_TIMES="-1.0,-1.0"
 # ATTRITION_TIMES="300.0,1100.0"
+MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/9nodes/rmappo/neighborActionsMasking/wandb/run-20240224_143840-g7o7t61b/files"
 
 for i in {1..1}; do
 
-    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=MARL agent_count:=$AGENTS use_rviz:=false headless:=false runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES"
+    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=MARL agent_count:=$AGENTS use_rviz:=false headless:=false runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR"
     # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=AHPA agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES"
     # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE algorithm_pkg:=patrol_algorithms_base algorithm_name:=CBLS agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES"
     # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE algorithm_pkg:=patrol_algorithms_base algorithm_name:=DTAGreedy agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES"
