@@ -346,7 +346,7 @@ class MonitorNode(Node):
             self.onlineAgentsPrev = online
 
 
-    def perfromAgentAttrition(self, agent):
+    def performAgentAttrition(self, agent):
         self.get_logger().warn(f"Performing attrition on agent {agent}.")
         os.system(f"pkill -2 -f '__ns:=/agent{agent}'")
 
