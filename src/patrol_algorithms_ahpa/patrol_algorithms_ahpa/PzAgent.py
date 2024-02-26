@@ -21,6 +21,7 @@ from patrolling_zoo.env.patrolling_zoo import parallel_env as pz_parallel_env
 from onpolicy.envs.patrolling.Patrolling_Env import PatrollingEnv
 
 from ament_index_python.packages import get_package_share_directory
+from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
 
 
 def _t2n(x):
@@ -77,6 +78,7 @@ class PzAgent(BasePatrolAgent):
         self.all_args.use_wandb = False
         self.all_args.model_dir = model_dir
         self.all_args.cuda_idx = 0
+        self.all_args.graph_random = False
         self.all_args.graph_file = os.path.join(get_package_share_directory("patrolling_sim"), "models/maps/cumberland/cumberland_full_res.graph")
 
         # self.all_args.communication_model = "none"
@@ -123,7 +125,7 @@ class PzAgent(BasePatrolAgent):
             Float32MultiArray,
             "/idleness",
             self.onReceiveIdleness,
-            100
+            qos_profile_sensor_data
         )
 
         self.get_logger().info(f"PZ agent {self.id} initialization complete.")
@@ -133,7 +135,7 @@ class PzAgent(BasePatrolAgent):
     def onReceiveIdleness(self, msg):
         ''' Called when a new idleness vector is received. '''
 
-        timeNow = self.get_clock().now().to_msg().sec
+        timeNow = self.getTimeElapsed()
 
         # Update the idleness.
         for v in range(self.graph.graph.number_of_nodes()):
@@ -158,8 +160,7 @@ class PzAgent(BasePatrolAgent):
     def onNavigationGoalSuccess(self):
 
         # Set visit time.
-        secsNow = self.get_clock().now().to_msg().sec
-        self.env.env.pg.setNodeVisitTime(self.goalNode, secsNow)
+        self.env.env.pg.setNodeVisitTime(self.goalNode, self.getTimeElapsed())
 
         self.agentsDict[self.id].edge = None
         self.agentsDict[self.id].lastNode = self.goalNode
@@ -171,75 +172,37 @@ class PzAgent(BasePatrolAgent):
         # self.get_logger().info("here is the start of PZ Agent Action")
 
         # Get new goal node.
-        secsNow = self.get_clock().now().to_msg().sec
+        timeElapsed = self.getTimeElapsed()
         if len(self.path) == 0:
-            self.env.env.step_count = secsNow
+            self.env.env.step_count = timeElapsed
             # very hacky...
 
             self.get_logger().info(f"Agent {self.id} choosing new goal. Avg idleness: {np.mean(self.env.env.pg.getAverageIdlenessTime(self.env.env.step_count))}")
 
-            # observations = {agent: self.env.env.observe(agent, allow_done_agents=False) for agent in self.env.env.possible_agents}
-            # if self.id == 0:
-            #     self.get_logger().warn(f"Raw observation: {observations}")
-            # observations = self.env._obs_wrapper(observations)
-            # obs = observations[self.id]
-            obs = self.env.env.observe(self.env.env.possible_agents[self.id], allow_done_agents=False)
+            obs = self.env.env.observe(self.agentsDict[self.id], allow_done_agents=False)
 
-            # if self.id == 0:
-            #     self.get_logger().warn(f"Wrapped observation: {obs}")
-
-            # from matplotlib import pyplot as plt
-            # # bitmap = self.env.env.observe(self.env.env.agents[0], radius=200)
-            # bitmap = obs
-            # graphLayer = bitmap[:,:,2]
-            # graphNodes = graphLayer[np.where(graphLayer >= 0)]
-            # self.get_logger().info(f"Sum of node layer: {np.sum(graphNodes)}")
-            # self.get_logger().info(f"Expected sum of node layer: {sum(list(range(len(self.env.env.pg.graph.nodes))))}")
-
-            # agentLayer = bitmap[:,:,0]
-            # agents = agentLayer[np.where(agentLayer >= 0)]
-
-            # if bitmap[0,0,0] != self.id:
-            #     self.get_logger().error(f"Agent ID {bitmap[0,0,0]} does not match expected ID {self.id}!")
-
-            # self.get_logger().info(f"Sum of agent layer: {np.sum(agents)}")
-            # self.get_logger().info(f"Expected sum of agent layer: {sum(list(range(self.agent_count)))}")
-            # if np.sum(agents) != sum(list(range(self.agent_count))) + self.id:
-            #     self.get_logger().error(f"Agent layer does not match expected sum!")
-
-
-            # bitmap = self.env.env._minMaxNormalize(bitmap, a=0, b=255)
-            # bitmap[np.where(graphLayer >= 0)] = 255
-            # bitmap[np.where(agentLayer >= 0)] = 0
-            # plt.imshow(bitmap, aspect="equal")
-            # # save image using pyplot
-            # plt.savefig(f"obs_{self.id}_{self.env.env.step_count}.png")
-
-
-            # self.get_logger().info("here is the start of PZ Agent Action process")
-            # self.obs_space_new = spaces.Dict(self.t)
-            # self.get_logger().info("here is the start of PZ Agent Action process")
             if self.env.flatten_observations:
-                # self.get_logger().warn(f"{type(self.obs_space)}, {type(obs)}, OBS SPACE: {self.obs_space}, OBS: {obs}")
                 obs = flatten(self.obs_space_orig, obs)
-                obs = obs.reshape((1,-1))
+                obs = obs.reshape((1, -1))
             else:
                 obs = np.expand_dims(obs, axis=0)
-            # self.get_logger().info(f"here is the shape of obs of input rnn {obs.shape}, {self.rnn_states[:,0].shape}, {self.masks[:,0].shape}")
-            action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], deterministic=True)
+
+            # Get available actions.
+            available_actions = self.env.env._getAvailableActions(self.agentsDict[self.id])
+            available_actions = np.expand_dims(available_actions, axis=0)
+
+            action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], available_actions=available_actions)
             action = action.item()
-            # self.get_logger().info("here is the mid process")
             self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
-            # self.get_logger().info(f"the action of PZ Agent Action {action}")
             
-            # Get path to the goal node.
-            self.pzGoalNode = action
-            self.path = self.env.env._getPathToNode(self.agentsDict[self.id], self.pzGoalNode)
+            # Get the goal node.
+            self.pzGoalNode = self.env.env.getDestinationNode(self.agentsDict[self.id], action)
+            # self.path = self.env.env._getPathToNode(self.agentsDict[self.id], self.pzGoalNode)
+            self.path = [self.pzGoalNode]
         
         nextNode = self.path.pop(0)
         self.agentsDict[self.id].edge = (self.agentsDict[self.id].lastNode, nextNode)
-        # nextNode = self.pzGoalNode
-        self.get_logger().info(f"PZ Agent {self.id} moving to node {nextNode} along edge {self.agentsDict[self.id].edge} with idleness {self.env.env.pg.getNodeIdlenessTime(nextNode, secsNow):.2f}. Remaining path: {self.path}")
+        self.get_logger().info(f"PZ Agent {self.id} moving to node {nextNode} along edge {self.agentsDict[self.id].edge} with idleness {self.env.env.pg.getNodeIdlenessTime(nextNode, timeElapsed):.2f}. Remaining path: {self.path}")
         return nextNode
         
 

@@ -55,6 +55,7 @@ class BasePatrolAgent(Node):
 
         # Variables.
         self.experimentInitialized = False
+        self.timeStart = None
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -138,6 +139,7 @@ class BasePatrolAgent(Node):
         ''' Begins execution after experiment initialization completes. '''
 
         self.experimentInitialized = True
+        self.timeStart = self.get_clock().now().to_msg().sec
         self.get_logger().info("Let's Patrol!")
 
         self.goToNode(self.getNextNode())
@@ -290,6 +292,15 @@ class BasePatrolAgent(Node):
         
         self.futureNav2PoseGoal = self.acNav2Pose.send_goal_async(goal)
         self.futureNav2PoseGoal.add_done_callback(self.onNav2PoseGoalResponse)
+
+
+    def getTimeElapsed(self):
+        ''' Returns the time elapsed since the experiment began. '''
+
+        if self.timeStart is None:
+            return 0
+        return self.get_clock().now().to_msg().sec - self.timeStart
+
 
     def getNextNode(self):
         ''' Called to determine which node the agent should travel to next.
