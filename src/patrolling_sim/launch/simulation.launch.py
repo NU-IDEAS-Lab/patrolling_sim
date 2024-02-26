@@ -73,6 +73,7 @@ def generate_launch_description():
         SetParameter(name="output_file", value=LaunchConfiguration("output")),
         SetParameter(name="attrition_times", value=LaunchConfiguration("attrition_times")),
         SetParameter(name="agent_policy_dir", value=LaunchConfiguration("agent_policy_dir")),
+        SetParameter(name="use_sim_time", value=True),
         SetParameter(
             name="patrol_graph_file",
             value=[
