@@ -14,15 +14,16 @@ source /usr/share/gazebo/setup.sh
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 
-AGENTS=2
+AGENTS=6
 RUNTIME=4000
-STEP_SIZE=0.005
+STEP_SIZE=0.01
 UPDATE_RATE=400.0
 OUTPUT_FILE="$HOME/papers/aamas2024/sim_results/test_debugging.zarr"
 ATTRITION_TIMES="-1.0,-1.0"
 # ATTRITION_TIMES="300.0,1100.0"
 # MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/cumberland/rmappo/6SharedAttritionYesCommsNoSkipSyncGNN/wandb/run-20240223_175018-9k9znk4e/files"
-MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/random9/rmappo/graphSAGEIdInGraphObsOnlyRegenerate20RandIds/wandb/run-20240225_174710-it4e1y0w/files"
+# MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/random9/rmappo/graphSAGEIdInGraphObsOnlyRegenerate20RandIds/wandb/run-20240225_174710-it4e1y0w/files"
+MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/cumberland/rmappo/graphSAGEIdInGraphObsOnly/wandb/run-20240225_164008-vcwaqqz6/files"
 
 for i in {1..1}; do
 
