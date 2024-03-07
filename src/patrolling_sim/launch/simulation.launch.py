@@ -62,6 +62,18 @@ def generate_launch_description():
             value="1"
         ),
 
+        # Enforce usage of CycloneDDS.
+        SetEnvironmentVariable(
+            name="RMW_IMPLEMENTATION",
+            value="rmw_cyclonedds_cpp"
+        ),
+
+        # Set CycloneDDS configuration.
+        SetEnvironmentVariable(
+            name="CYCLONEDDS_URI",
+            value=["file://", FindPackageShare("patrolling_sim"), "/config/cyclonedds.xml"]
+        ),
+
         # Set parameters from file.
         SetParametersFromFile(LaunchConfiguration("params_file")),
 
