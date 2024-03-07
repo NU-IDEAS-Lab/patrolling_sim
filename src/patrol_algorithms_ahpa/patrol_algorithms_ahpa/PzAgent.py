@@ -69,6 +69,7 @@ class PzAgent(BasePatrolAgent):
 
         
         # Check args.
+        self.all_args.num_agents = self.agent_count
         # if self.all_args.num_agents != self.agent_count and self.all_args.observe_method != "bitmap2":
         #     # We can easily avoid this problem if we use the bitmap2 observation mode.
         #     raise ValueError(f"Number of agents in the environment ({self.agent_count}) does not match the number of agents in the model ({self.all_args.num_agents})!")
