@@ -80,7 +80,9 @@ class PzAgent(BasePatrolAgent):
         self.all_args.model_dir = model_dir
         self.all_args.cuda_idx = 0
         self.all_args.graph_random = False
-        self.all_args.graph_file = os.path.join(get_package_share_directory("patrolling_sim"), "models/maps/cumberland/cumberland_full_res.graph")
+        # self.all_args.graph_file = os.path.join(get_package_share_directory("patrolling_sim"), "models/maps/cumberland/cumberland_full_res.graph")
+        self.all_args.graph_file = self.graphFilePath
+        self.get_logger().info(f"PZ environment is using graph file {self.all_args.graph_file}")
 
         # self.all_args.communication_model = "none"
         # self.all_args.communication_probability = 0.0
@@ -194,6 +196,7 @@ class PzAgent(BasePatrolAgent):
 
             action, action_log_probs, rnn_state = self.actor(obs, self.rnn_states[:,0], self.masks[:,0], available_actions=available_actions)
             action = action.item()
+            self.get_logger().info(f"PZ Agent {self.id} chose action {action} with log prob {action_log_probs.item()}. Available actions: {available_actions}")
             self.rnn_states[0,0] = np.array(np.split(_t2n(rnn_state), 1))
             
             # Get the goal node.
