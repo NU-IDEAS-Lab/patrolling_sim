@@ -57,7 +57,7 @@ class MonitorNode(Node):
 
         self.get_logger().info(f"Initializing monitor for {self.agent_count} agents on map {self.map}.")
 
-        random.seed(42)
+        random.seed()
 
         # Variables.
         self.experimentInitialized = False
