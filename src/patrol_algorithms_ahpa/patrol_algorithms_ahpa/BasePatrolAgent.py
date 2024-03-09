@@ -280,6 +280,7 @@ class BasePatrolAgent(Node):
         self.get_logger().info(f"Requesting navigation goal for node {node} {position}.")
 
         goal = NavigateToPose.Goal()
+        goal.behavior_tree = "navigate_to_pose_w_replanning_and_recovery"
         goal.pose.header.frame_id = "map"
         goal.pose.header.stamp = self.get_clock().now().to_msg()
         goal.pose.pose.position.x = float(position[0])

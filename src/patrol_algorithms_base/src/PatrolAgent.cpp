@@ -540,6 +540,7 @@ void PatrolAgent::sendGoal(int next_vertex)
     // ac->sendGoal(goal, boost::bind(&PatrolAgent::goalDoneCallback, this, _1, _2), boost::bind(&PatrolAgent::goalActiveCallback,this), boost::bind(&PatrolAgent::goalFeedbackCallback, this,_1));  
 
     auto goal = ActionNav2Pose::Goal();
+    goal.behavior_tree = "navigate_to_pose_w_replanning_and_recovery";
     goal.pose.header.frame_id = "map";
     goal.pose.header.stamp = this->get_clock()->now();    
     goal.pose.pose.position.x = target_x; // vertex_web[current_vertex].x;
