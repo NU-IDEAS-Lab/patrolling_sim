@@ -86,7 +86,9 @@ class PzAgent(BasePatrolAgent):
 
         # self.all_args.communication_model = "none"
         # self.all_args.communication_probability = 0.0
-        # self.all_args.observation_radius = np.inf
+
+        # Scale the observation radius.
+        self.all_args.observation_radius /= self.graph.resolution
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
