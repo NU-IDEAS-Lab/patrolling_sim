@@ -46,7 +46,7 @@
 // #include <nav_msgs/Odometry.h>
 // #include <std_srvs/Empty.h>
 
-// #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/utils.h"
@@ -130,7 +130,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         printf("\n");   
     }
 #endif
-      
+    
+    this->behavior_tree = ament_index_cpp::get_package_share_directory("nav2_bt_navigator") + "/behavior_trees/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml";
+
     this->interference = false;
     this->ResendGoal = false;
     this->goal_complete = true;
@@ -540,7 +542,7 @@ void PatrolAgent::sendGoal(int next_vertex)
     // ac->sendGoal(goal, boost::bind(&PatrolAgent::goalDoneCallback, this, _1, _2), boost::bind(&PatrolAgent::goalActiveCallback,this), boost::bind(&PatrolAgent::goalFeedbackCallback, this,_1));  
 
     auto goal = ActionNav2Pose::Goal();
-    goal.behavior_tree = "navigate_to_pose_w_replanning_and_recovery";
+    goal.behavior_tree = this->behavior_tree;
     goal.pose.header.frame_id = "map";
     goal.pose.header.stamp = this->get_clock()->now();    
     goal.pose.pose.position.x = target_x; // vertex_web[current_vertex].x;

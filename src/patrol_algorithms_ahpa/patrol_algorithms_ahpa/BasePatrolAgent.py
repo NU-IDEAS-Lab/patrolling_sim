@@ -3,6 +3,7 @@ import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
 
 from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
 
@@ -56,6 +57,13 @@ class BasePatrolAgent(Node):
         # Variables.
         self.experimentInitialized = False
         self.timeStart = None
+
+        # get path to nav2_bt_navigator package share
+        self.behavior_tree = os.path.join(
+            get_package_share_directory("nav2_bt_navigator"),
+            "behavior_trees",
+            "navigate_to_pose_w_replanning_goal_patience_and_recovery.xml"
+        )
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -280,7 +288,7 @@ class BasePatrolAgent(Node):
         self.get_logger().info(f"Requesting navigation goal for node {node} {position}.")
 
         goal = NavigateToPose.Goal()
-        goal.behavior_tree = "navigate_to_pose_w_replanning_and_recovery"
+        goal.behavior_tree = self.behavior_tree
         goal.pose.header.frame_id = "map"
         goal.pose.header.stamp = self.get_clock().now().to_msg()
         goal.pose.pose.position.x = float(position[0])
@@ -289,7 +297,6 @@ class BasePatrolAgent(Node):
         goal.pose.pose.orientation.y = 0.0
         goal.pose.pose.orientation.z = 0.0
         goal.pose.pose.orientation.w = 1.0
-        goal.behavior_tree = ""
         
         self.futureNav2PoseGoal = self.acNav2Pose.send_goal_async(goal)
         self.futureNav2PoseGoal.add_done_callback(self.onNav2PoseGoalResponse)

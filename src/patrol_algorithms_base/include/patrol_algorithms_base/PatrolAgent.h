@@ -82,6 +82,7 @@ protected:
 
     rclcpp::TimerBase::SharedPtr timer;
 
+    std::string behavior_tree;
     std::string graph_file, mapname;
     uint dimension; // Graph Dimension
     uint current_vertex; // current vertex
