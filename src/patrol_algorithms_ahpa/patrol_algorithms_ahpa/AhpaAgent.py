@@ -11,8 +11,10 @@ class AhpaAgent(BasePatrolAgent):
         self.get_logger().info(f"AHPA agent {self.id} has origin {self.agentOrigins[self.id]}.")
 
         # Set the allocation.
-        self.voronoiOrigins = self.agentOrigins.copy()
-        cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
+        self.voronoiOrigins = {}
+        for agent, origin in enumerate(self.agentOrigins):
+            self.voronoiOrigins[agent] = origin
+        cell = self.getNodeAllocation(list(self.voronoiOrigins.values()), self.agentOrigins)
         self.nodes = self.getNodeOrder(cell)
         self.currentNodeIdx = self.nodes.index(self.agentOrigins[self.id])
 
@@ -54,7 +56,7 @@ class AhpaAgent(BasePatrolAgent):
 
         # Update the Voronoi partitions.
         del self.voronoiOrigins[agent]
-        cell = self.getNodeAllocation(self.voronoiOrigins, self.agentOrigins)
+        cell = self.getNodeAllocation(list(self.voronoiOrigins.values()), self.agentOrigins)
         old = self.nodes
         self.nodes = self.getNodeOrder(cell)
 
