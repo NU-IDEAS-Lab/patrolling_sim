@@ -115,6 +115,7 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+    current_goal_checker: "general_goal_checker"
     controller_plugins: ["FollowPath"]
 
     # Progress checker parameters
@@ -135,9 +136,17 @@ controller_server:
       yaw_goal_tolerance: 6.28
     # DWB parameters
     FollowPath:
-      plugin: "dwb_core::DWBLocalPlanner"
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      primary_controller: "dwb_core::DWBLocalPlanner"
+      angular_dist_threshold: 0.785
+      forward_sampling_distance: 0.5
+      rotate_to_heading_angular_vel: 1.8
+      max_angular_accel: 3.2
+      simulate_ahead_time: 1.0
+
+      # DWB Local Planner parameters
       debug_trajectory_details: True
-      min_vel_x: 0.0
+      min_vel_x: -0.26
       min_vel_y: 0.0
       max_vel_x: 0.26
       max_vel_y: 0.0
@@ -235,7 +244,7 @@ global_costmap:
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: False
+        enabled: True
         observation_sources: scan
         scan:
           topic: /scan
