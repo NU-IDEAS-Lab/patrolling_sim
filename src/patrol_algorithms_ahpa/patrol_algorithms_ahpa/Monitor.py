@@ -17,6 +17,7 @@ from patrolling_sim_interfaces.msg import AgentTelemetry
 from std_msgs.msg import Int16MultiArray, Float32MultiArray
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
+from flatland_msgs.srv import DeleteModel
 
 from patrol_algorithms_ahpa.PatrolGraph import PatrolGraph
 
@@ -129,6 +130,14 @@ class MonitorNode(Node):
             "/visualization_marker_array",
             10
         )
+
+        # Service clients.
+        self.get_logger().info("Waiting for /delete_model service...")
+        self.deleteModelClient = self.create_client(DeleteModel, "/delete_model")
+        if not self.deleteModelClient.wait_for_service(timeout_sec=10.0):
+            self.get_logger().warn("Service /delete_model not available. Agents will not be removed from simulation upon attrition!")
+            self.deleteModelClient = None
+        self.get_logger().info("Service /delete_model available.")
 
         # Create timers.
         self.timerSendMarkers = self.create_timer(
@@ -356,6 +365,12 @@ class MonitorNode(Node):
 
         timeElapsed = self.get_clock().now() - self.timeStart
         self.attritionList.append([timeElapsed.nanoseconds, agent])
+
+        # Remove from simulation.
+        if self.deleteModelClient is not None:
+            req = DeleteModel.Request()
+            req.name = f"agent{agent}"
+            future = self.deleteModelClient.call_async(req)
 
 
     def waitForAgents(self):
