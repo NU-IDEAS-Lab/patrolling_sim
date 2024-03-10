@@ -43,6 +43,9 @@ class MonitorNode(Node):
         self.declare_parameter("attrition_times", "")
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
+        self.declare_parameter("startup_timeout", 100,
+            rclpy.ParameterDescriptor(description="Time to wait for agents to start up (seconds).")
+        )
         self.algorithm = self.get_parameter("algorithm_name").get_parameter_value().string_value
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
@@ -51,6 +54,7 @@ class MonitorNode(Node):
         self.attritionTimes = self.get_parameter("attrition_times").get_parameter_value().string_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
+        self.startupTimeout = self.get_parameter("startup_timeout").get_parameter_value().integer_value
 
         self.attritionTimes = [float(i) for i in self.attritionTimes.split(",") if len(i) > 0]
         if self.attritionTimes[0] < 0:
@@ -148,6 +152,10 @@ class MonitorNode(Node):
             5.0, # period (seconds)
             self.onTimerReportOnlineAgents
         )
+        self.timerFailedStartup = self.create_timer(
+            self.startupTimeout, # period (seconds)
+            self.onTimerFailedStartup
+        )
 
         # Wait for initialization.
         self.waitForAgents()
@@ -175,6 +183,10 @@ class MonitorNode(Node):
         self.timeStart = self.get_clock().now()
         self.experimentInitialized = True
         self.get_logger().info("Initialization complete.")
+
+        # Cancel the failed startup timer.
+        self.timerFailedStartup.cancel()
+        self.timerFailedStartup = None
 
         # Start timer.
         self.timerSendIdleness = self.create_timer(
@@ -252,6 +264,15 @@ class MonitorNode(Node):
         self.get_logger().warn(f"Simulation completed after {self.runtime}s. Shutting down.")
         raise KeyboardInterrupt()
     
+
+    def onTimerFailedStartup(self):
+        ''' Shuts down the simulation if startup times out. '''
+
+        online = self.getOnlineAgents()
+        self.get_logger().error(f"Startup failed. Shutting down. Current agents online: {online}")
+        raise KeyboardInterrupt()
+
+
     def onTimerSendIdleness(self):
         ''' Repeatedly send the idleness message. '''
 
@@ -345,15 +366,21 @@ class MonitorNode(Node):
     def onTimerReportOnlineAgents(self):
         ''' Reports online agents. '''
 
+        online = self.getOnlineAgents()
+        if online != self.onlineAgentsPrev:
+            self.get_logger().info(f"Online agents: {online}")
+            self.onlineAgentsPrev = online
+
+
+    def getOnlineAgents(self):
+        ''' Returns a list of online agents. '''
+
         online = []
         timeNow = self.get_clock().now()
         for agent in range(self.agent_count):
             if (timeNow - self.agentLastTelemetryTime[agent]).nanoseconds < self.TIMEOUT_AGENT_ONLINE_NS:
                 online.append(agent)
-        if online != self.onlineAgentsPrev:
-            self.get_logger().info(f"Online agents: {online}")
-            self.onlineAgentsPrev = online
-
+        return online
 
     def performAgentAttrition(self, agent):
         self.get_logger().warn(f"Performing attrition on agent {agent}.")
