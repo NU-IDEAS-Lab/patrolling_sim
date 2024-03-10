@@ -43,9 +43,7 @@ class MonitorNode(Node):
         self.declare_parameter("attrition_times", "")
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
-        self.declare_parameter("startup_timeout", 100,
-            rclpy.ParameterDescriptor(description="Time to wait for agents to start up (seconds).")
-        )
+        self.declare_parameter("startup_timeout", 100)
         self.algorithm = self.get_parameter("algorithm_name").get_parameter_value().string_value
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
