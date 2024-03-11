@@ -20,7 +20,9 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
 from flatland_msgs.srv import DeleteModel
 
+from patrol_algorithms_ahpa.PzEnvironment import PzEnvironment
 from patrol_algorithms_ahpa.PatrolGraph import PatrolGraph
+
 
 class MonitorNode(Node):
     MSG_TYPES = {
@@ -78,7 +80,10 @@ class MonitorNode(Node):
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
         self.agentOrigins = self.graph.getOriginsFromInitialPoses(self.initialPoses)
-        self.agentPositions = [(0.0, 0.0) for a in range(self.agent_count)]
+        self.agentPositions = list(zip(self.initialPoses[0::2], self.initialPoses[1::2]))
+
+        # Create the PzEnvironment.
+        self.pzEnv = PzEnvironment(self)
 
         # Data storage.
         self.zarrRoot = zarr.open(self.outputFilePath, mode="a")
@@ -240,16 +245,18 @@ class MonitorNode(Node):
             msg.odom.pose.pose.position.y
         )
         self.agentLastTelemetryTime[msg.sender] = self.get_clock().now()
+        self.pzEnv.onReceiveTelemetry(msg)
 
     def onAgentReachedNode(self, agent, node):
         ''' Called when agent reaches a node. Record data here. '''
 
-        timeElapsed = self.get_clock().now() - self.timeStart
+        timeElapsed = self.getTimeElapsed()
         self.visitTimes.append(timeElapsed.nanoseconds)
         self.visitAgents.append(agent)
         self.visitNodes.append(node)
         self.graph.setNodeVisitTime(node, timeElapsed.nanoseconds / 1.0e9)
         self.get_logger().info(f"Agent {agent} reached node {node} at time {timeElapsed.nanoseconds / 1.0e9}.")
+        self.pzEnv.onNavigationGoalSuccess(agent, node)
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
@@ -372,6 +379,10 @@ class MonitorNode(Node):
             self.get_logger().info(f"Online agents: {online}")
             self.onlineAgentsPrev = online
 
+    def getTimeElapsed(self):
+        ''' Returns the time elapsed since the start of the experiment. '''
+
+        return self.get_clock().now() - self.timeStart
 
     def getOnlineAgents(self):
         ''' Returns a list of online agents. '''
@@ -395,6 +406,7 @@ class MonitorNode(Node):
         self.attritionList.append([timeElapsed.nanoseconds, agent])
 
         # Remove from simulation.
+        self.pzEnv.onAgentAttrition(agent)
         if self.deleteModelClient is not None:
             req = DeleteModel.Request()
             req.name = f"agent{agent}"
