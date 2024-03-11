@@ -5,6 +5,7 @@ import numpy as np
 import os
 import rclpy
 from rclpy.node import Node
+from rclpy.clock import Clock
 from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -43,7 +44,7 @@ class MonitorNode(Node):
         self.declare_parameter("attrition_times", "")
         self.declare_parameter("agent_count", 1)
         self.declare_parameter("runtime", 0)
-        self.declare_parameter("startup_timeout", 100)
+        self.declare_parameter("startup_timeout", 100.0)
         self.algorithm = self.get_parameter("algorithm_name").get_parameter_value().string_value
         self.map = self.get_parameter("map").get_parameter_value().string_value
         self.graphFilePath = self.get_parameter("patrol_graph_file").get_parameter_value().string_value
@@ -52,7 +53,7 @@ class MonitorNode(Node):
         self.attritionTimes = self.get_parameter("attrition_times").get_parameter_value().string_value
         self.agent_count = self.get_parameter("agent_count").get_parameter_value().integer_value
         self.runtime = self.get_parameter("runtime").get_parameter_value().integer_value
-        self.startupTimeout = self.get_parameter("startup_timeout").get_parameter_value().integer_value
+        self.startupTimeout = self.get_parameter("startup_timeout").get_parameter_value().double_value
 
         self.attritionTimes = [float(i) for i in self.attritionTimes.split(",") if len(i) > 0]
         if self.attritionTimes[0] < 0:
@@ -60,7 +61,7 @@ class MonitorNode(Node):
 
         self.get_logger().info(f"Initializing monitor for {self.agent_count} agents on map {self.map}.")
 
-        random.seed()
+        random.seed(100)
 
         # Variables.
         self.experimentInitialized = False
@@ -70,7 +71,7 @@ class MonitorNode(Node):
         self.visitNodes = []
         self.commsTimes = []
         self.attritionList = []
-        self.agentsRemaining = set(range(self.agent_count))
+        self.agentsRemaining = list(range(self.agent_count))
         self.agentLastTelemetryTime = [self.get_clock().now() for _ in range(self.agent_count)]
         self.onlineAgentsPrev = []
 
@@ -150,9 +151,11 @@ class MonitorNode(Node):
             5.0, # period (seconds)
             self.onTimerReportOnlineAgents
         )
+        self.clockSystem = Clock()
         self.timerFailedStartup = self.create_timer(
             self.startupTimeout, # period (seconds)
-            self.onTimerFailedStartup
+            self.onTimerFailedStartup,
+            clock = self.clockSystem
         )
 
         # Wait for initialization.
@@ -345,8 +348,8 @@ class MonitorNode(Node):
 
         del self.attritionTimes[0]
 
-        agent = random.sample(list(self.agentsRemaining), 1)[0]
-        self.agentsRemaining -= {agent}
+        agent = self.agentsRemaining[0]
+        self.agentsRemaining.remove(agent)
 
         self.performAgentAttrition(agent)
 
