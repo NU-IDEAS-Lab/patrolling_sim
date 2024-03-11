@@ -131,7 +131,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     }
 #endif
     
-    this->behavior_tree = ament_index_cpp::get_package_share_directory("nav2_bt_navigator") + "/behavior_trees/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml";
+    this->behavior_tree = ament_index_cpp::get_package_share_directory("patrolling_sim") + "/config/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml";
 
     this->interference = false;
     this->ResendGoal = false;
