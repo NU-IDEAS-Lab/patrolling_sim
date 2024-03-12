@@ -140,9 +140,6 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->goal_canceled_by_user = false;
     this->aborted_count = 0;
     this->resend_goal_count = 0;
-    this->communication_delay = 0.0;
-    this->lost_message_rate = 0.0;
-    this->goal_reached_wait = 0.0;
     /* Define Starting Vertex/Position (Launch File Parameters) */
 
     // // wait a random time (avoid conflicts with other robots starting at the same time...)
@@ -797,7 +794,16 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
         //     //update this->agent_count:
         //     this->agent_count = idx+1;
         // }
-        
+        bool lost_message = false;
+        if ((lost_message_rate>0.0001)&& (idx!=ID_ROBOT)) {
+            double r = (rand() % 1000)/1000.0;
+            if(r < lost_message_rate) {
+                // RCLCPP_INFO(this->get_logger(), "Lost position");
+                return;
+            }
+        }
+
+
         if (ID_ROBOT != idx){  //Ignore own positions   
             xPos[idx]=msg->pose.pose.position.x;
             yPos[idx]=msg->pose.pose.position.y;        
@@ -912,6 +918,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
             }
             if (lost_message) {
                 RCLCPP_INFO(this->get_logger(), "Lost message");
+                return;
             }
         }
         receive_results();
