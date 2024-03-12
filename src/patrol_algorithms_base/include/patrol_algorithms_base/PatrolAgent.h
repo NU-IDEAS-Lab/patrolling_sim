@@ -56,6 +56,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
+#include "patrolling_sim_interfaces/msg/agent_telemetry.hpp"
 
 #include "patrol_algorithms_base/getgraph.h"
 #include "patrolling_sim_interfaces/message_types.h"
@@ -109,9 +110,9 @@ protected:
     rclcpp_action::Client<ActionNav2Pose>::SharedPtr ac;
     
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr positions_sub;
+    rclcpp::Subscription<patrolling_sim_interfaces::msg::AgentTelemetry>::SharedPtr positions_sub;
     rclcpp::Subscription<std_msgs::msg::Int16MultiArray>::SharedPtr results_sub;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr positions_pub;
+    rclcpp::Publisher<patrolling_sim_interfaces::msg::AgentTelemetry>::SharedPtr positions_pub;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr results_pub;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
     rclcpp::Client<nav2_msgs::srv::ClearEntireCostmap>::SharedPtr clientCostmapLocalClear;
@@ -168,7 +169,7 @@ public:
     virtual void receive_results();  // asynchronous call
     void do_send_message(std_msgs::msg::Int16MultiArray::SharedPtr msg);
     void send_interference();
-    void positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg);
+    void positionsCB(patrolling_sim_interfaces::msg::AgentTelemetry::ConstSharedPtr msg);
     void resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg);
     
     // Must be implemented by sub-classes

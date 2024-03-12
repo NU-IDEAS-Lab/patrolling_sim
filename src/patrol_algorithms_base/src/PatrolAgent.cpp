@@ -186,11 +186,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         
     //Publicar dados de "odom" para nó de posições
     // positions_pub = nh.advertise<nav_msgs::Odometry>("positions", 1); //only concerned about the most recent
-    this->positions_pub = this->create_publisher<nav_msgs::msg::Odometry>("/positions", 10);
+    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 10);
         
     //Subscrever posições de outros robots
     // positions_sub = nh.subscribe<nav_msgs::Odometry>("positions", 10, boost::bind(&PatrolAgent::positionsCB, this, _1));  
-    this->positions_sub = this->create_subscription<nav_msgs::msg::Odometry>("/positions", 100,
+    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 100,
         std::bind(&PatrolAgent::positionsCB, this, std::placeholders::_1));
     
     char string1[40];
@@ -740,21 +740,22 @@ void PatrolAgent::onTimerSendPositions() {
 void PatrolAgent::send_positions()
 {
     //Publish Position to common node:
-    nav_msgs::msg::Odometry msg; 
+    patrolling_sim_interfaces::msg::AgentTelemetry msg; 
     
     int idx = ID_ROBOT;
 
+    msg.sender = idx;
     if (ID_ROBOT <= -1){
-        msg.header.frame_id = "map";    //identificador do robot q publicou
+        msg.odom.header.frame_id = "map";    //identificador do robot q publicou
         idx = 0;
     }else{
         char string[20];
         sprintf(string,"robot_%d/map",ID_ROBOT);
-        msg.header.frame_id = string;
+        msg.odom.header.frame_id = string;
     }
 
-    msg.pose.pose.position.x = xPos[idx]; //send odometry.x
-    msg.pose.pose.position.y = yPos[idx]; //send odometry.y
+    msg.odom.pose.pose.position.x = xPos[idx]; //send odometry.x
+    msg.odom.pose.pose.position.y = yPos[idx]; //send odometry.y
   
     positions_pub->publish(msg);
     // ros::spinOnce();
@@ -766,12 +767,12 @@ void PatrolAgent::receive_positions()
     
 }
 
-void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //construir tabelas de posições
+void PatrolAgent::positionsCB(patrolling_sim_interfaces::msg::AgentTelemetry::ConstSharedPtr msg) { //construir tabelas de posições
         
 //     printf("Construir tabela de posicoes (receber posicoes), ID_ROBOT = %d\n",ID_ROBOT);    
         
     char id[20]; //identificador do robot q enviou a msg d posição...
-    strcpy( id, msg->header.frame_id.c_str() );
+    strcpy( id, msg->odom.header.frame_id.c_str() );
     //int stamp = msg->header.seq;
 //     printf("robot q mandou msg = %s\n", id);
     
@@ -810,8 +811,8 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
 
 
         if (ID_ROBOT != idx){  //Ignore own positions   
-            xPos[idx]=msg->pose.pose.position.x;
-            yPos[idx]=msg->pose.pose.position.y;        
+            xPos[idx]=msg->odom.pose.pose.position.x;
+            yPos[idx]=msg->odom.pose.pose.position.y;        
         }   
 //      printf ("Position Table:\n frame.id = %s\n id_robot = %d\n xPos[%d] = %f\n yPos[%d] = %f\n\n", id, idx, idx, xPos[idx], idx, yPos[idx] );       
     }
