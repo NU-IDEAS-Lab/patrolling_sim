@@ -15,6 +15,10 @@ from onpolicy.envs.patrolling.Patrolling_Env import PatrollingEnv
 def _t2n(x):
     return x.detach().cpu().numpy()
 
+# Configure PyTorch to use just one core.
+# Otherwise on many-CPU machines it will use all cores by default.
+torch.set_num_threads(1)
+
 class PzEnvironment:
     def __init__(self, node):
         self.pzReady = False
