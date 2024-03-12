@@ -215,6 +215,8 @@ class MonitorNode(Node):
                 duration, # period (seconds)
                 self.onTimerAttrition
             )
+        
+        self.pzEnv.onExperimentInitialized()
 
 
     def onReceiveResults(self, msg):

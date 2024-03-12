@@ -100,6 +100,18 @@ class PzEnvironment:
         self.pzReady = True
 
 
+    def onExperimentInitialized(self):
+        ''' Called when the experiment is initialized. '''
+
+        self.timerCommunicate = self.node.create_timer(1.0, self.onTimerCommunicate)
+    
+
+    def onTimerCommunicate(self):
+        ''' Drives the environment's communication. '''
+
+        self.env.env.communicate()
+
+
     def onQueryPolicy(self, request, response):
         ''' Callback for the get_next_node service. '''
 

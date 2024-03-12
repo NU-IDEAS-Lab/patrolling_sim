@@ -81,6 +81,7 @@ protected:
     std::shared_ptr<tf2_ros::TransformListener> listener{nullptr};
 
     rclcpp::TimerBase::SharedPtr timer;
+    rclcpp::TimerBase::SharedPtr timerPositions;
 
     std::string behavior_tree;
     std::string graph_file, mapname;
@@ -160,6 +161,7 @@ public:
     virtual void processEvents();  // processes algorithm-specific events
     
     // Robot-Robot Communication
+    void onTimerSendPositions();
     void send_positions();
     void receive_positions();
     virtual void send_results();  // when goal is completed

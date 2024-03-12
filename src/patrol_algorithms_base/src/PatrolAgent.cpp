@@ -241,6 +241,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
 
     timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
+
+    rclcpp::Rate rateSendPositions = rclcpp::Rate(1.0);
+    this->timerPositions = rclcpp::create_timer(this, this->get_clock(), rateSendPositions.period(), std::bind(&PatrolAgent::onTimerSendPositions, this));
 }
 
 void PatrolAgent::ready() {
@@ -605,8 +608,6 @@ void PatrolAgent::goalActiveCallback(ActionGoalHandleNav2Pose::ConstSharedPtr go
 
 void PatrolAgent::goalFeedbackCallback(ActionGoalHandleNav2Pose::ConstSharedPtr, const std::shared_ptr<const ActionNav2Pose::Feedback> feedback){    //publicar posições
 
-    send_positions();
-    
     int value = ID_ROBOT;
     if (value==-1){ value = 0;}
     interference = check_interference(value);    
@@ -731,6 +732,10 @@ void PatrolAgent::do_interference_behavior()
 // ROBOT-ROBOT COMMUNICATION
 
 
+// Periodically sends position information to other robots.
+void PatrolAgent::onTimerSendPositions() {
+    send_positions();
+}
 
 void PatrolAgent::send_positions()
 {
