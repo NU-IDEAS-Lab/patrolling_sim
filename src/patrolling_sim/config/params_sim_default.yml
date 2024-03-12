@@ -1,4 +1,4 @@
-/**/patrol_agent:
+/**/**:
   ros__parameters:
     # Generic PatrolAgent parameters.
     goal_reached_wait: 0.0

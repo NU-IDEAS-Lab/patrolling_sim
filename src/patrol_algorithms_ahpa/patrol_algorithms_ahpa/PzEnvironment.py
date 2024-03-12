@@ -23,7 +23,9 @@ class PzEnvironment:
 
         # Set the model directory using a ROS 2 parameter.
         self.node.declare_parameter("agent_policy_dir", "/home/anthony/papers/aamas2024/policies/6attritionYesCommsNoSkipAsyncBitmap2/wandb/run-20231008_155309-f4gvl2ju/files")
+        self.node.declare_parameter("lost_message_rate", 0.0)
         self.model_dir = self.node.get_parameter("agent_policy_dir").get_parameter_value().string_value
+        self.lost_message_rate = self.node.get_parameter("lost_message_rate").get_parameter_value().double_value
         self.graphFilePath = self.node.graphFilePath
 
         #Load the default arguments
@@ -48,13 +50,14 @@ class PzEnvironment:
         self.all_args.cuda_idx = 0
         self.all_args.graph_random = False
         self.all_args.graph_file = self.graphFilePath
+        self.all_args.communication_model = "bernoulli"
+        self.all_args.communication_probability = 1.0 - self.lost_message_rate
         self.node.get_logger().info(f"PZ environment is using graph file {self.all_args.graph_file}")
-
-        # self.all_args.communication_model = "none"
-        # self.all_args.communication_probability = 0.0
 
         # Scale the observation radius.
         self.all_args.observation_radius /= self.node.graph.resolution
+
+        self.node.get_logger().info(f"PZ environment is using observation radius {self.all_args.observation_radius} and communication probability {self.all_args.communication_probability}")
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
