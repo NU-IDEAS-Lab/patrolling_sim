@@ -59,11 +59,11 @@ class PzEnvironment:
         self.node.get_logger().info(f"PZ environment is using graph file {self.all_args.graph_file}")
 
         # Scale the observation radius.
-        self.all_args.observation_radius *= self.node.graph.resolution
-        self.node.declare_parameter("observation_radius", self.all_args.observation_radius)
-        self.all_args.observation_radius = self.node.get_parameter("observation_radius").get_parameter_value().double_value
+        self.node.declare_parameter("observation_radius", self.all_args.observation_radius * self.node.graph.resolution)
+        obs_radius_scaled = self.node.get_parameter("observation_radius").get_parameter_value().double_value
+        self.all_args.observation_radius = obs_radius_scaled / self.node.graph.resolution
 
-        self.node.get_logger().info(f"PZ environment is using observation radius {self.all_args.observation_radius} and communication probability {self.all_args.communication_probability}")
+        self.node.get_logger().info(f"PZ environment is using observation radius {self.all_args.observation_radius} (scaled to {obs_radius_scaled} in sim) and communication probability {self.all_args.communication_probability}")
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
