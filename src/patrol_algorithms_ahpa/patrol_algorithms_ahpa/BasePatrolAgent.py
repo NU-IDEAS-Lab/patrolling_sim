@@ -11,6 +11,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 import time
+import random
 
 from action_msgs.msg import GoalStatus
 from lifecycle_msgs.srv import GetState
@@ -189,6 +190,11 @@ class BasePatrolAgent(Node):
                     self.get_logger().info(f"Shutting down agent {self.id}")
                     os.system(f"pkill -2 -f '__ns:=/agent{self.id}'")
                 else:
+                    # Check whether the message should be dropped.
+                    if self.lost_message_rate > 0 and random.random() < self.lost_message_rate:
+                        self.get_logger().info(f"Lost attrition message from agent {agentIdx}.")
+                        return
+
                     # Handle someone else's shutdown.
                     self.onAgentAttrition(agentIdx)
 
