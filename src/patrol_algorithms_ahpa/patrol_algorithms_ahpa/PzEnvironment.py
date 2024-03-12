@@ -54,7 +54,10 @@ class PzEnvironment:
         # self.all_args.communication_probability = 0.0
 
         # Scale the observation radius.
-        self.all_args.observation_radius /= self.node.graph.resolution
+        self.all_args.observation_radius *= self.node.graph.resolution
+        # self.all_args.observation_radius = np.inf
+        self.node.get_logger().info(f"PzEnvironment is using observation radius {self.all_args.observation_radius}")
+
 
         # Set up environment
         self.env = PatrollingEnv(self.all_args)
