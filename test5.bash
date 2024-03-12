@@ -4,7 +4,7 @@
 
 exec 3>&1 4>&2
 trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>out/40ky3q01_attrition_obs60_comms10_run2.out 2>&1
+exec 1>out/40ky3q01_no_attrition_obsInf_comms100_run1.out 2>&1
 # Everything below will go to the file 'log.out':
 
 source ./install/setup.bash
@@ -17,10 +17,10 @@ AGENTS=6
 RUNTIME=1800
 STEP_SIZE=0.02
 UPDATE_RATE=100.0
-PARAMS_FILE="/home/anthony/dev/patrolling_sim/params_obs60_comms10.yml"
-OUTPUT_FILE="$HOME/papers/iros2024/sim_results/40ky3q01_attrition_obs60_comms10_run2.zarr"
-# ATTRITION_TIMES="-1.0,-1.0"
-ATTRITION_TIMES="300.0,1100.0"
+PARAMS_FILE="/home/anthony/dev/patrolling_sim/params_obsInf_comms100.yml"
+OUTPUT_FILE="$HOME/papers/iros2024/sim_results/40ky3q01_no_attrition_obsInf_comms100_run1.zarr"
+ATTRITION_TIMES="-1.0,-1.0"
+# ATTRITION_TIMES="300.0,1100.0"
 # MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/cumberland/rmappo/6SharedAttritionYesCommsNoSkipSyncGNN/wandb/run-20240223_175018-9k9znk4e/files"
 # MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/random9/rmappo/graphSAGEIdInGraphObsOnlyRegenerate20RandIds/wandb/run-20240225_174710-it4e1y0w/files"
 # MODEL_DIR="/home/anthony/papers/aamas2024/policies/cumberland/rmappo/graphSAGEIdInGraphObsOnly/wandb/run-20240225_164008-vcwaqqz6/files"

@@ -1,0 +1,16 @@
+/**/**:
+  ros__parameters:
+    # Generic PatrolAgent parameters.
+    goal_reached_wait: 0.0
+    communication_delay: 0.0
+    lost_message_rate: 0.9
+    observation_radius: 30.0
+
+    # MSP-specific parameters.
+    msp_file: ""
+
+/**/controller_server:
+  ros__parameters:
+    general_goal_checker:
+      xy_goal_tolerance: 0.25
+      yaw_goal_tolerance: 6.28
