@@ -193,6 +193,7 @@ class BasePatrolAgent(Node):
                     # Check whether the message should be dropped.
                     if self.lost_message_rate > 0 and random.random() < self.lost_message_rate:
                         self.get_logger().info(f"Lost attrition message from agent {agentIdx}.")
+                        return
 
                     # Handle someone else's shutdown.
                     self.onAgentAttrition(agentIdx)
