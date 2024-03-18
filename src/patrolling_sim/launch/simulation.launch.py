@@ -18,8 +18,8 @@ def generate_launch_description():
 
     startMonitorAction = Node(
         # package="monitoring_control",
-        package="patrol_algorithms_ahpa",
-        executable="monitor",
+        package=LaunchConfiguration("monitor_pkg"),
+        executable=LaunchConfiguration("monitor_name"),
         name="monitor",
         exec_name="monitor"
     )
@@ -34,6 +34,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'algorithm_name', default_value='Random'
+        ),
+        DeclareLaunchArgument(
+            'monitor_pkg', default_value='patrol_algorithms_ahpa'
+        ),
+        DeclareLaunchArgument(
+            'monitor_name', default_value='monitor'
         ),
         DeclareLaunchArgument(
             'runtime', default_value='0'
