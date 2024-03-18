@@ -4,7 +4,7 @@
 
 exec 3>&1 4>&2
 trap 'exec 2>&4 1>&3' 0 1 2 3
-exec 1>out/40ky3q01_attrition_obs30_comms10_run1.out 2>&1
+exec 1>out/40ky3q01_attrition_obs30_comms10_SEBS_run1.out 2>&1
 # Everything below will go to the file 'log.out':
 
 source ./install/setup.bash
@@ -18,7 +18,7 @@ RUNTIME=1800
 STEP_SIZE=0.02
 UPDATE_RATE=100.0
 PARAMS_FILE="/home/anthony/dev/patrolling_sim/params_obs30_comms10.yml"
-OUTPUT_FILE="$HOME/papers/iros2024/sim_results/40ky3q01_attrition_obs30_comms10_run1.zarr"
+OUTPUT_FILE="$HOME/papers/iros2024/sim_results/40ky3q01_attrition_obs30_comms10_SEBS_run1.zarr"
 # ATTRITION_TIMES="-1.0,-1.0"
 ATTRITION_TIMES="300.0,1100.0"
 # MODEL_DIR="/mnt/c/Users/Anthony/Desktop/patrolling_policies/cumberland/rmappo/6SharedAttritionYesCommsNoSkipSyncGNN/wandb/run-20240223_175018-9k9znk4e/files"
@@ -32,11 +32,11 @@ MODEL_DIR="/home/anthony/dev/patrolling_zoo/onpolicy/scripts/results/Patrolling/
 
 for i in {1..3}; do
 
-    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=MARL agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
-    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=AHPA agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
-    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=CBLS agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
+    # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=MARL agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
+    # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_ahpa algorithm_name:=AHPA agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
+    # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=CBLS agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
     # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=DTAGreedy agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
     # ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=DTASSIPart agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
-    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=GBS agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
+    ros2 launch patrolling_sim simulation.launch.py sim:=flatland step_size:=$STEP_SIZE update_rate:=$UPDATE_RATE algorithm_pkg:=patrol_algorithms_base algorithm_name:=SEBS agent_count:=$AGENTS use_rviz:=false headless:=true runtime:=$RUNTIME output:="$OUTPUT_FILE" attrition_times:="$ATTRITION_TIMES" agent_policy_dir:="$MODEL_DIR" params_file:="$PARAMS_FILE"
 
 done
