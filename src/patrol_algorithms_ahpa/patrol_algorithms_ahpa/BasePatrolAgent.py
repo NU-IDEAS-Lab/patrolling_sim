@@ -3,6 +3,7 @@ import os
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from ament_index_python.packages import get_package_share_directory
 
 from rclpy.qos import qos_profile_sensor_data, qos_profile_parameters
 
@@ -10,6 +11,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 import time
+import random
 
 from action_msgs.msg import GoalStatus
 from lifecycle_msgs.srv import GetState
@@ -55,11 +57,22 @@ class BasePatrolAgent(Node):
 
         # Variables.
         self.experimentInitialized = False
+        self.timeStart = None
+
+        # get path to nav2_bt_navigator package share
+        self.behavior_tree = os.path.join(
+            get_package_share_directory("patrolling_sim"),
+            "config",
+            "navigate_to_pose_w_replanning_goal_patience_and_recovery.xml"
+        )
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
         self.agentOrigins = self.graph.getOriginsFromInitialPoses(self.initialPoses)
         self.agentPositions = [(0.0, 0.0) for a in range(self.agent_count)]
+
+        initialPositions = [p for p in zip(self.initialPoses[0::2], self.initialPoses[1::2])]
+        self.get_logger().info(f"Agent {self.id} initial node: {self.agentOrigins[self.id]}, initial position: {initialPositions[self.id]}")
 
         # Subscribers.
         self.tfBuffer = Buffer()
@@ -109,14 +122,20 @@ class BasePatrolAgent(Node):
         while rclpy.ok() and not self.tfBuffer.can_transform(self.tf_prefix + "map", self.tf_prefix + "base_link", rclpy.time.Time()):
             rclpy.spin_once(self)
         
+        # Get position once.
+        self.onTimerGetPosition()
 
         # Setup is complete.
         self.get_logger().info("Initialization complete.")
     
         # Timers.
         # These begin executing immediately.
+        self.timerGetPosition = self.create_timer(
+            0.1, # period (seconds)
+            self.onTimerGetPosition
+        )
         self.timerSendTelemetry = self.create_timer(
-            1.0, # period (seconds)
+            0.2, # period (seconds)
             self.onTimerSendTelemetry
         )
         self.timerAdvertizeReady = self.create_timer(
@@ -129,6 +148,7 @@ class BasePatrolAgent(Node):
         ''' Begins execution after experiment initialization completes. '''
 
         self.experimentInitialized = True
+        self.timeStart = self.get_clock().now().to_msg().sec
         self.get_logger().info("Let's Patrol!")
 
         self.goToNode(self.getNextNode())
@@ -170,6 +190,11 @@ class BasePatrolAgent(Node):
                     self.get_logger().info(f"Shutting down agent {self.id}")
                     os.system(f"pkill -2 -f '__ns:=/agent{self.id}'")
                 else:
+                    # Check whether the message should be dropped.
+                    if self.lost_message_rate > 0 and random.random() < self.lost_message_rate:
+                        self.get_logger().info(f"Lost attrition message from agent {agentIdx}.")
+                        return
+
                     # Handle someone else's shutdown.
                     self.onAgentAttrition(agentIdx)
 
@@ -185,11 +210,10 @@ class BasePatrolAgent(Node):
     def onTimerGetPosition(self):
         ''' Called periodically to look up current position. '''
 
-        raise NotImplementedError()
         try:
-            t = self.tfBuffer.lookupTransform(
-                self.tf_prefix + "base_link",
+            t = self.tfBuffer.lookup_transform(
                 self.tf_prefix + "map",
+                self.tf_prefix + "base_link",
                 rclpy.time.Time()
             )
         except TransformException as e:
@@ -270,6 +294,7 @@ class BasePatrolAgent(Node):
         self.get_logger().info(f"Requesting navigation goal for node {node} {position}.")
 
         goal = NavigateToPose.Goal()
+        goal.behavior_tree = self.behavior_tree
         goal.pose.header.frame_id = "map"
         goal.pose.header.stamp = self.get_clock().now().to_msg()
         goal.pose.pose.position.x = float(position[0])
@@ -278,10 +303,18 @@ class BasePatrolAgent(Node):
         goal.pose.pose.orientation.y = 0.0
         goal.pose.pose.orientation.z = 0.0
         goal.pose.pose.orientation.w = 1.0
-        goal.behavior_tree = ""
         
         self.futureNav2PoseGoal = self.acNav2Pose.send_goal_async(goal)
         self.futureNav2PoseGoal.add_done_callback(self.onNav2PoseGoalResponse)
+
+
+    def getTimeElapsed(self):
+        ''' Returns the time elapsed since the experiment began. '''
+
+        if self.timeStart is None:
+            return 0
+        return self.get_clock().now().to_msg().sec - self.timeStart
+
 
     def getNextNode(self):
         ''' Called to determine which node the agent should travel to next.

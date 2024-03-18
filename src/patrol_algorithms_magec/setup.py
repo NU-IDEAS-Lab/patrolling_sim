@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'patrol_algorithms_ahpa'
+package_name = 'patrol_algorithms_magec'
 
 setup(
     name=package_name,
@@ -20,10 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'monitor = patrol_algorithms_ahpa.Monitor:main',
-            'BasePatrolAgent = patrol_algorithms_ahpa.BasePatrolAgent:main',
-            'AHPA = patrol_algorithms_ahpa.AhpaAgent:main',
-            'MARL = patrol_algorithms_ahpa.PzAgent:main'
+            'monitor = patrol_algorithms_magec.Monitor:main',
+            'MAGEC = patrol_algorithms_magec.PzAgent:main'
         ],
     },
 )

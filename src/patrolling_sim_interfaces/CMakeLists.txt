@@ -14,6 +14,7 @@ find_package(nav_msgs REQUIRED)
 rosidl_generate_interfaces(patrolling_sim_interfaces
   "msg/AgentTelemetry.msg"
   "srv/GoToStartPosSrv.srv"
+  "srv/QueryPolicy.srv"
   DEPENDENCIES builtin_interfaces nav_msgs
 )
 

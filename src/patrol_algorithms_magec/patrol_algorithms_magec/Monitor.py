@@ -20,6 +20,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
 from flatland_msgs.srv import DeleteModel
 
+from patrol_algorithms_magec.PzEnvironment import PzEnvironment
 from patrol_algorithms_ahpa.PatrolGraph import PatrolGraph
 
 
@@ -80,6 +81,9 @@ class MonitorNode(Node):
         self.graph = PatrolGraph(self.graphFilePath)
         self.agentOrigins = self.graph.getOriginsFromInitialPoses(self.initialPoses)
         self.agentPositions = list(zip(self.initialPoses[0::2], self.initialPoses[1::2]))
+
+        # Create the PzEnvironment.
+        self.pzEnv = PzEnvironment(self)
 
         # Data storage.
         self.zarrRoot = zarr.open(self.outputFilePath, mode="a")
@@ -211,6 +215,9 @@ class MonitorNode(Node):
                 duration, # period (seconds)
                 self.onTimerAttrition
             )
+        
+        self.pzEnv.onExperimentInitialized()
+
 
     def onReceiveResults(self, msg):
         ''' Called when results are received. '''
@@ -240,6 +247,7 @@ class MonitorNode(Node):
             msg.odom.pose.pose.position.y
         )
         self.agentLastTelemetryTime[msg.sender] = self.get_clock().now()
+        self.pzEnv.onReceiveTelemetry(msg)
 
     def onAgentReachedNode(self, agent, node):
         ''' Called when agent reaches a node. Record data here. '''
@@ -250,6 +258,7 @@ class MonitorNode(Node):
         self.visitNodes.append(node)
         self.graph.setNodeVisitTime(node, timeElapsed.nanoseconds / 1.0e9)
         self.get_logger().info(f"Agent {agent} reached node {node} at time {timeElapsed.nanoseconds / 1.0e9}.")
+        self.pzEnv.onNavigationGoalSuccess(agent, node)
     
     def onTimerSendInitialize(self):
         ''' Repeatedly send the initialization message. '''
@@ -399,6 +408,7 @@ class MonitorNode(Node):
         self.attritionList.append([timeElapsed.nanoseconds, agent])
 
         # Remove from simulation.
+        self.pzEnv.onAgentAttrition(agent)
         if self.deleteModelClient is not None:
             req = DeleteModel.Request()
             req.name = f"agent{agent}"

@@ -46,7 +46,7 @@
 // #include <nav_msgs/Odometry.h>
 // #include <std_srvs/Empty.h>
 
-// #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/utils.h"
@@ -130,7 +130,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         printf("\n");   
     }
 #endif
-      
+    
+    this->behavior_tree = ament_index_cpp::get_package_share_directory("patrolling_sim") + "/config/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml";
+
     this->interference = false;
     this->ResendGoal = false;
     this->goal_complete = true;
@@ -138,9 +140,6 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->goal_canceled_by_user = false;
     this->aborted_count = 0;
     this->resend_goal_count = 0;
-    this->communication_delay = 0.0;
-    this->lost_message_rate = 0.0;
-    this->goal_reached_wait = 0.0;
     /* Define Starting Vertex/Position (Launch File Parameters) */
 
     // // wait a random time (avoid conflicts with other robots starting at the same time...)
@@ -187,11 +186,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         
     //Publicar dados de "odom" para nó de posições
     // positions_pub = nh.advertise<nav_msgs::Odometry>("positions", 1); //only concerned about the most recent
-    this->positions_pub = this->create_publisher<nav_msgs::msg::Odometry>("/positions", 10);
+    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 10);
         
     //Subscrever posições de outros robots
     // positions_sub = nh.subscribe<nav_msgs::Odometry>("positions", 10, boost::bind(&PatrolAgent::positionsCB, this, _1));  
-    this->positions_sub = this->create_subscription<nav_msgs::msg::Odometry>("/positions", 100,
+    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 100,
         std::bind(&PatrolAgent::positionsCB, this, std::placeholders::_1));
     
     char string1[40];
@@ -242,6 +241,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
 
     timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
+
+    rclcpp::Rate rateSendPositions = rclcpp::Rate(1.0);
+    this->timerPositions = rclcpp::create_timer(this, this->get_clock(), rateSendPositions.period(), std::bind(&PatrolAgent::onTimerSendPositions, this));
 }
 
 void PatrolAgent::ready() {
@@ -540,6 +542,7 @@ void PatrolAgent::sendGoal(int next_vertex)
     // ac->sendGoal(goal, boost::bind(&PatrolAgent::goalDoneCallback, this, _1, _2), boost::bind(&PatrolAgent::goalActiveCallback,this), boost::bind(&PatrolAgent::goalFeedbackCallback, this,_1));  
 
     auto goal = ActionNav2Pose::Goal();
+    goal.behavior_tree = this->behavior_tree;
     goal.pose.header.frame_id = "map";
     goal.pose.header.stamp = this->get_clock()->now();    
     goal.pose.pose.position.x = target_x; // vertex_web[current_vertex].x;
@@ -605,8 +608,6 @@ void PatrolAgent::goalActiveCallback(ActionGoalHandleNav2Pose::ConstSharedPtr go
 
 void PatrolAgent::goalFeedbackCallback(ActionGoalHandleNav2Pose::ConstSharedPtr, const std::shared_ptr<const ActionNav2Pose::Feedback> feedback){    //publicar posições
 
-    send_positions();
-    
     int value = ID_ROBOT;
     if (value==-1){ value = 0;}
     interference = check_interference(value);    
@@ -731,25 +732,30 @@ void PatrolAgent::do_interference_behavior()
 // ROBOT-ROBOT COMMUNICATION
 
 
+// Periodically sends position information to other robots.
+void PatrolAgent::onTimerSendPositions() {
+    send_positions();
+}
 
 void PatrolAgent::send_positions()
 {
     //Publish Position to common node:
-    nav_msgs::msg::Odometry msg; 
+    patrolling_sim_interfaces::msg::AgentTelemetry msg; 
     
     int idx = ID_ROBOT;
 
+    msg.sender = idx;
     if (ID_ROBOT <= -1){
-        msg.header.frame_id = "map";    //identificador do robot q publicou
+        msg.odom.header.frame_id = "map";    //identificador do robot q publicou
         idx = 0;
     }else{
         char string[20];
         sprintf(string,"robot_%d/map",ID_ROBOT);
-        msg.header.frame_id = string;
+        msg.odom.header.frame_id = string;
     }
 
-    msg.pose.pose.position.x = xPos[idx]; //send odometry.x
-    msg.pose.pose.position.y = yPos[idx]; //send odometry.y
+    msg.odom.pose.pose.position.x = xPos[idx]; //send odometry.x
+    msg.odom.pose.pose.position.y = yPos[idx]; //send odometry.y
   
     positions_pub->publish(msg);
     // ros::spinOnce();
@@ -761,12 +767,12 @@ void PatrolAgent::receive_positions()
     
 }
 
-void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //construir tabelas de posições
+void PatrolAgent::positionsCB(patrolling_sim_interfaces::msg::AgentTelemetry::ConstSharedPtr msg) { //construir tabelas de posições
         
 //     printf("Construir tabela de posicoes (receber posicoes), ID_ROBOT = %d\n",ID_ROBOT);    
         
     char id[20]; //identificador do robot q enviou a msg d posição...
-    strcpy( id, msg->header.frame_id.c_str() );
+    strcpy( id, msg->odom.header.frame_id.c_str() );
     //int stamp = msg->header.seq;
 //     printf("robot q mandou msg = %s\n", id);
     
@@ -794,10 +800,19 @@ void PatrolAgent::positionsCB(nav_msgs::msg::Odometry::ConstSharedPtr msg) { //c
         //     //update this->agent_count:
         //     this->agent_count = idx+1;
         // }
-        
+        bool lost_message = false;
+        if ((lost_message_rate>0.0001)&& (idx!=ID_ROBOT)) {
+            double r = (rand() % 1000)/1000.0;
+            if(r < lost_message_rate) {
+                // RCLCPP_INFO(this->get_logger(), "Lost position");
+                return;
+            }
+        }
+
+
         if (ID_ROBOT != idx){  //Ignore own positions   
-            xPos[idx]=msg->pose.pose.position.x;
-            yPos[idx]=msg->pose.pose.position.y;        
+            xPos[idx]=msg->odom.pose.pose.position.x;
+            yPos[idx]=msg->odom.pose.pose.position.y;        
         }   
 //      printf ("Position Table:\n frame.id = %s\n id_robot = %d\n xPos[%d] = %f\n yPos[%d] = %f\n\n", id, idx, idx, xPos[idx], idx, yPos[idx] );       
     }
@@ -889,9 +904,9 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
     }
     
     if (!initialize) {
-#if 0
-        // communication delay
         if(ID_ROBOT>-1){
+#if 0
+            // communication delay
             if ((communication_delay>0.001) && (id_sender!=ID_ROBOT)) {
                     double current_time = this->get_clock()->now().seconds();
                     if (current_time-last_communication_delay_time>1.0) { 
@@ -901,6 +916,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
                             last_communication_delay_time = current_time;
                 }
             }
+#endif
             bool lost_message = false;
             if ((lost_message_rate>0.0001)&& (id_sender!=ID_ROBOT)) {
                 double r = (rand() % 1000)/1000.0;
@@ -908,10 +924,10 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
             }
             if (lost_message) {
                 RCLCPP_INFO(this->get_logger(), "Lost message");
+                return;
             }
         }
-#endif
-            receive_results();
+        receive_results();
     }
 
     // ros::spinOnce();
