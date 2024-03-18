@@ -6,11 +6,11 @@ This repository is used in multiple papers. See below for the revisions associat
 
  * A. Goeckner, Y. Sui, N. Martinet, X. Li, and Q. Zhu, “Graph Neural Network-based Multi-agent Reinforcement Learning for Resilient Distributed Coordination of Multi-Robot Systems,” under review.
 
-   * Commit 357e9a47
+   * Commit 357e9a47064d67a6b6f66f41f73424933f86e345
 
  * A. Goeckner, X. Li, E. Wei, and Q. Zhu, “Attrition-Aware Adaptation for Multi-Agent Patrolling.” arXiv, Jan. 12, 2024. doi: 10.48550/arXiv.2304.01386.
 
-   * Commit 36e474b7
+   * Commit 36e474b734c9682798e0f0260ba9fda632c3b6ca
 
 
 # Prerequisites
