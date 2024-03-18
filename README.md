@@ -1,6 +1,18 @@
 # patrolling_sim
 This began as a fork of [David Portugal's patrolling_sim](https://github.com/davidbsp/patrolling_sim), but has evolved into a rewrite of the original. This version makes use of the [Grex Machina multi-agent framework](https://github.com/NU-IDEAS-Lab/grex) and ROS 2, allowing for far more capabilities than the original patrolling_sim.
 
+## Papers
+This repository is used in multiple papers. See below for the revisions associated with specific submissions:
+
+ * A. Goeckner, Y. Sui, N. Martinet, X. Li, and Q. Zhu, “Graph Neural Network-based Multi-agent Reinforcement Learning for Resilient Distributed Coordination of Multi-Robot Systems,” under review.
+
+   * Commit 357e9a47
+
+ * A. Goeckner, X. Li, E. Wei, and Q. Zhu, “Attrition-Aware Adaptation for Multi-Agent Patrolling.” arXiv, Jan. 12, 2024. doi: 10.48550/arXiv.2304.01386.
+
+   * Commit 36e474b7
+
+
 # Prerequisites
 First install all prerequisites of the [Grex Machina](https://github.com/NU-IDEAS-Lab/grex) repository.
 
