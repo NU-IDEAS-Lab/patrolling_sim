@@ -111,6 +111,13 @@ def generate_launch_description():
                 ".graph"
             ]
         ),
+        SetParameter(
+            name="default_nav_to_pose_bt_xml",
+            value=[
+                FindPackageShare("patrolling_sim"),
+                "/config/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml"
+            ]
+        ),
 
         # Launch the simulation base.
         IncludeLaunchDescription(

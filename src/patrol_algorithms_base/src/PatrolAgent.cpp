@@ -131,7 +131,9 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     }
 #endif
     
-    this->behavior_tree = ament_index_cpp::get_package_share_directory("patrolling_sim") + "/config/navigate_to_pose_w_replanning_goal_patience_and_recovery.xml";
+    // We leave this blank to set the behavior tree for navigation to the
+    // one provided in the `default_nav_to_pose_bt_xml` parameter.
+    this->behavior_tree = "";
 
     this->interference = false;
     this->ResendGoal = false;

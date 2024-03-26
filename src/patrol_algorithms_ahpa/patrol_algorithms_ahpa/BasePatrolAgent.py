@@ -59,12 +59,9 @@ class BasePatrolAgent(Node):
         self.experimentInitialized = False
         self.timeStart = None
 
-        # get path to nav2_bt_navigator package share
-        self.behavior_tree = os.path.join(
-            get_package_share_directory("patrolling_sim"),
-            "config",
-            "navigate_to_pose_w_replanning_goal_patience_and_recovery.xml"
-        )
+        # We leave this blank to set the behavior tree for navigation to the
+        # one provided in the `default_nav_to_pose_bt_xml` parameter.
+        self.behavior_tree = ""
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
