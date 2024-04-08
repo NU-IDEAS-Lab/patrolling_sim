@@ -80,6 +80,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->declare_parameter("goal_reached_wait", 3.0);
     this->declare_parameter("communication_delay", 0.2);
     this->declare_parameter("lost_message_rate", 0.0);
+    this->declare_parameter("enable_legacy_interference", false);
     this->declare_parameter("agent_count", 1);
     this->declare_parameter("tf_prefix", "");
 
@@ -92,6 +93,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->lost_message_rate = this->get_parameter("lost_message_rate").get_parameter_value().get<double>();
     this->agent_count = this->get_parameter("agent_count").get_parameter_value().get<int>(); //TODO: Make this /control/agent_count
     this->tf_prefix = this->get_parameter("tf_prefix").get_parameter_value().get<std::string>();
+    this->enable_interference = this->get_parameter("enable_legacy_interference").get_parameter_value().get<bool>();
 
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
@@ -300,7 +302,7 @@ void PatrolAgent::run_once() {
         resend_goal_count=0;
     }
     else { // goal not complete (active)
-        if (interference) {
+        if (interference && this->enable_interference) {
             do_interference_behavior();
         }       
         
