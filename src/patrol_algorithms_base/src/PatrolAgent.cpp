@@ -37,6 +37,7 @@
 
 #include <sstream>
 #include <string>
+#include <rmw/qos_profiles.hpp>
 // #include <ros/ros.h>
 // #include <ros/package.h> //to get pkg path
 // #include <move_base_msgs/MoveBaseAction.h>
@@ -190,11 +191,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         
     //Publicar dados de "odom" para nó de posições
     // positions_pub = nh.advertise<nav_msgs::Odometry>("positions", 1); //only concerned about the most recent
-    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 10);
+    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", rmw_qos_profile_sensor_data);
         
     //Subscrever posições de outros robots
     // positions_sub = nh.subscribe<nav_msgs::Odometry>("positions", 10, boost::bind(&PatrolAgent::positionsCB, this, _1));  
-    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 100,
+    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", rmw_qos_profile_sensor_data,
         std::bind(&PatrolAgent::positionsCB, this, std::placeholders::_1));
     
     char string1[40];
@@ -220,7 +221,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     
     //Subscrever para obter dados de "odom" do robot corrente
     // odom_sub = nh.subscribe<nav_msgs::Odometry>(string1, 1, boost::bind(&PatrolAgent::odomCB, this, _1)); //size of the buffer = 1 (?)
-    odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("odom", 10,
+    odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("odom", rmw_qos_profile_sensor_data,
         std::bind(&PatrolAgent::odomCB, this, std::placeholders::_1));
     
     // Service client to clear the costmap.
@@ -229,8 +230,8 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     );
     
     //Publicar dados para "results"
-    results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", 100);
-    results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", 100,
+    results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", rmw_qos_profile_parameters);
+    results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", rmw_qos_profile_parameters,
         std::bind(&PatrolAgent::resultsCB, this, std::placeholders::_1));
 
     // last time comm delay has been applied
