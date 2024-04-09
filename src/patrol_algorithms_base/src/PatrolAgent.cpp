@@ -37,7 +37,7 @@
 
 #include <sstream>
 #include <string>
-#include <rmw/qos_profiles.hpp>
+#include <rmw/qos_profiles.h>
 // #include <ros/ros.h>
 // #include <ros/package.h> //to get pkg path
 // #include <move_base_msgs/MoveBaseAction.h>
