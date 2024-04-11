@@ -138,10 +138,11 @@ class MonitorNode(Node):
         # Service clients.
         self.get_logger().info("Waiting for /delete_model service...")
         self.deleteModelClient = self.create_client(DeleteModel, "/delete_model")
-        if not self.deleteModelClient.wait_for_service(timeout_sec=10.0):
+        if not self.deleteModelClient.wait_for_service(timeout_sec=3.0):
             self.get_logger().warn("Service /delete_model not available. Agents will not be removed from simulation upon attrition!")
             self.deleteModelClient = None
-        self.get_logger().info("Service /delete_model available.")
+        else:
+            self.get_logger().info("Service /delete_model available.")
 
         # Create timers.
         self.timerSendMarkers = self.create_timer(
