@@ -283,7 +283,7 @@ void PatrolAgent::onExperimentInitialized() {
     initialize = false;
 
     // Clear costmap initially.
-    this->clearLocalCostmap(true);
+    // this->clearLocalCostmap(true);
 
     rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
     timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
