@@ -84,6 +84,7 @@ protected:
 
     rclcpp::TimerBase::SharedPtr timer;
     rclcpp::TimerBase::SharedPtr timerPositions;
+    rclcpp::TimerBase::SharedPtr timerAdvertizeReady;
 
     std::string behavior_tree;
     std::string graph_file, mapname;
@@ -131,6 +132,7 @@ public:
     
     PatrolAgent();
     void ready();
+    void onExperimentInitialized();
     void initialize_node();
     void update_idleness();  // local idleness
     

@@ -231,15 +231,12 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     // Wait for ready.
     ready();
 
-    // Clear costmap initially.
-    this->clearLocalCostmap(true);
-
-    rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
-
-    timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
-
     rclcpp::Rate rateSendPositions = rclcpp::Rate(1.0);
     this->timerPositions = rclcpp::create_timer(this, this->get_clock(), rateSendPositions.period(), std::bind(&PatrolAgent::onTimerSendPositions, this));
+
+    // Advertize readiness.
+    rclcpp::Rate rateAdvertizeReady = rclcpp::Rate(1.0);
+    this->timerAdvertizeReady = rclcpp::create_timer(this, this->get_clock(), rateAdvertizeReady.period(), std::bind(&PatrolAgent::initialize_node, this));
 }
 
 void PatrolAgent::ready() {
@@ -277,14 +274,17 @@ void PatrolAgent::ready() {
     } 
     RCLCPP_INFO(this->get_logger(), "Transform from map->base_link received.");
 
-    
-    /* Wait until all nodes are ready.. */
-    while(initialize && rclcpp::ok()){
-        initialize_node(); //announce that agent is alive
-        rclcpp::spin_some(this->get_node_base_interface());
-        loop_rate.sleep();
-    }    
+}
 
+void PatrolAgent::onExperimentInitialized() {
+
+    initialize = false;
+
+    // Clear costmap initially.
+    this->clearLocalCostmap(true);
+
+    rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
+    timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
 }
 
 void PatrolAgent::run_once() {
@@ -426,6 +426,11 @@ void PatrolAgent::update_idleness() {
 
 void PatrolAgent::initialize_node (){ //ID,msg_type,1
     
+    if(!initialize){
+        this->timerAdvertizeReady->cancel();
+        return;
+    }
+
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     RCLCPP_INFO(this->get_logger(), "Initialize Node: Robot %d",value); 
@@ -888,7 +893,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
             // printf("Wait %.1f seconds (init pos:%s)\n",r,initial_positions.c_str());
 
             this->get_clock()->sleep_for(wait);
-            initialize = false;
+            this->onExperimentInitialized();
         }
 
 #if SIMULATE_FOREVER == false
