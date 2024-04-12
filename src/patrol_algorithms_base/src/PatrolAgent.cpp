@@ -231,6 +231,8 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     // Wait for ready.
     ready();
 
+    RCLCPP_INFO(this->get_logger(), "Patrol agent %d initialized", this->ID_ROBOT);
+
     rclcpp::Rate rateSendPositions = rclcpp::Rate(1.0);
     this->timerPositions = rclcpp::create_timer(this, this->get_clock(), rateSendPositions.period(), std::bind(&PatrolAgent::onTimerSendPositions, this));
 
