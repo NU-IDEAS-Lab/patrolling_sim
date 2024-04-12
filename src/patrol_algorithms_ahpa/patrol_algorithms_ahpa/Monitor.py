@@ -15,6 +15,13 @@ import random
 import zarr
 
 from patrolling_sim_interfaces.msg import AgentTelemetry
+
+USE_GREX = True
+try:
+    from grex_network_interfaces.msg import AgentHeartbeat
+except ImportError:
+    USE_GREX = False
+
 from std_msgs.msg import Int16MultiArray, Float32MultiArray
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
@@ -32,6 +39,7 @@ class MonitorNode(Node):
     }
 
     TIMEOUT_AGENT_ONLINE_NS = 2e9 #nanoseconds
+    TIMEOUT_AGENT_ACTIVE_NS = 2e9 #nanoseconds
 
     def __init__(self):
         super().__init__("Monitor")
@@ -73,8 +81,10 @@ class MonitorNode(Node):
         self.commsTimes = []
         self.attritionList = []
         self.agentsRemaining = list(range(self.agent_count))
-        self.agentLastTelemetryTime = [self.get_clock().now() for _ in range(self.agent_count)]
-        self.onlineAgentsPrev = []
+        self.agentLastHeartbeatTime = [self.get_clock().now() for _ in range(self.agent_count)]
+        self.agentLastPositionTime = [self.get_clock().now() for _ in range(self.agent_count)]
+        self.agentsOnlinePrev = []
+        self.agentsActivePrev = []
 
         # Components.
         self.graph = PatrolGraph(self.graphFilePath)
@@ -112,6 +122,13 @@ class MonitorNode(Node):
             self.onReceiveResults,
             qos_profile_parameters
         )
+        if USE_GREX:
+            self.subHeartbeat = self.create_subscription(
+                AgentHeartbeat,
+                "/heartbeat",
+                self.onReceiveHeartbeat,
+                qos_profile_sensor_data
+            )
 
         # Publishers.
         self.pubResults = self.create_publisher(
@@ -240,7 +257,10 @@ class MonitorNode(Node):
             msg.odom.pose.pose.position.x,
             msg.odom.pose.pose.position.y
         )
-        self.agentLastTelemetryTime[msg.sender] = self.get_clock().now()
+        self.agentLastPositionTime[msg.sender] = self.get_clock().now()
+
+    def onReceiveHeartbeat(self, msg):
+        self.agentLastHeartbeatTime[msg.sender.id] = self.get_clock().now()
 
     def onAgentReachedNode(self, agent, node):
         ''' Called when agent reaches a node. Record data here. '''
@@ -368,10 +388,19 @@ class MonitorNode(Node):
     def onTimerReportOnlineAgents(self):
         ''' Reports online agents. '''
 
+        changed = False
         online = self.getOnlineAgents()
-        if online != self.onlineAgentsPrev:
-            self.get_logger().info(f"Online agents: {online}")
-            self.onlineAgentsPrev = online
+        if online != self.agentsOnlinePrev:
+            self.agentsOnlinePrev = online
+            changed = True
+        active = self.getActiveAgents()
+        if active != self.agentsActivePrev:
+            self.agentsActivePrev = active
+            changed = True
+        
+        if changed:
+            self.get_logger().info(f"Online agents: {online} Active agents: {active}")
+
 
     def getTimeElapsed(self):
         ''' Returns the time elapsed since the start of the experiment. '''
@@ -384,9 +413,19 @@ class MonitorNode(Node):
         online = []
         timeNow = self.get_clock().now()
         for agent in range(self.agent_count):
-            if (timeNow - self.agentLastTelemetryTime[agent]).nanoseconds < self.TIMEOUT_AGENT_ONLINE_NS:
+            if (timeNow - self.agentLastHeartbeatTime[agent]).nanoseconds < self.TIMEOUT_AGENT_ONLINE_NS:
                 online.append(agent)
         return online
+
+    def getActiveAgents(self):
+        ''' Returns a list of active agents. '''
+
+        active = []
+        timeNow = self.get_clock().now()
+        for agent in range(self.agent_count):
+            if (timeNow - self.agentLastPositionTime[agent]).nanoseconds < self.TIMEOUT_AGENT_ACTIVE_NS:
+                active.append(agent)
+        return active
 
     def performAgentAttrition(self, agent):
         self.get_logger().warn(f"Performing attrition on agent {agent}.")
