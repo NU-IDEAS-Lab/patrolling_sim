@@ -4,13 +4,37 @@ This began as a fork of [David Portugal's patrolling_sim](https://github.com/dav
 ## Papers
 This repository is used in multiple papers. See below for the revisions associated with specific submissions:
 
- * A. Goeckner, Y. Sui, N. Martinet, X. Li, and Q. Zhu, “Graph Neural Network-based Multi-agent Reinforcement Learning for Resilient Distributed Coordination of Multi-Robot Systems,” under review.
+ * A. Goeckner, Y. Sui, N. Martinet, X. Li, and Q. Zhu, [“Graph Neural Network-based Multi-agent Reinforcement Learning for Resilient Distributed Coordination of Multi-Robot Systems,”](https://doi.org/10.1109/IROS58592.2024.10802510) IROS 2024.
 
-   * Commit 357e9a47064d67a6b6f66f41f73424933f86e345
+   * Commit: 357e9a47064d67a6b6f66f41f73424933f86e345
+   * Citation:
+      ```
+      @INPROCEEDINGS{10802510,
+      author={Goeckner, Anthony and Sui, Yueyuan and Martinet, Nicolas and Li, Xinliang and Zhu, Qi},
+      booktitle={2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, 
+      title={Graph Neural Network-based Multi-agent Reinforcement Learning for Resilient Distributed Coordination of Multi-Robot Systems}, 
+      year={2024},
+      volume={},
+      number={},
+      pages={5732-5739},
+      doi={10.1109/IROS58592.2024.10802510}}
+      ```
 
- * A. Goeckner, X. Li, E. Wei, and Q. Zhu, “Attrition-Aware Adaptation for Multi-Agent Patrolling.” arXiv, Jan. 12, 2024. doi: 10.48550/arXiv.2304.01386.
+ * A. Goeckner, X. Li, E. Wei, and Q. Zhu, [“Attrition-Aware Adaptation for Multi-Agent Patrolling.”](https://doi.org/10.1109/LRA.2024.3421793) IEEE Robotics and Automation Letters, 2024.
 
    * Commit 36e474b734c9682798e0f0260ba9fda632c3b6ca
+   * Citation:
+      ```
+      @ARTICLE{10582411,
+      author={Goeckner, Anthony and Li, Xinliang and Wei, Ermin and Zhu, Qi},
+      journal={IEEE Robotics and Automation Letters}, 
+      title={Attrition-Aware Adaptation for Multi-Agent Patrolling}, 
+      year={2024},
+      volume={9},
+      number={8},
+      pages={7230-7237},
+      doi={10.1109/LRA.2024.3421793}}
+      ```
 
 
 # Prerequisites
