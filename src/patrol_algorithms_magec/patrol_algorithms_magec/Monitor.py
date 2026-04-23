@@ -95,10 +95,10 @@ class MonitorNode(Node):
         self.zarrData = self.zarrRoot2.require_group(
             f"run_{len(self.zarrRoot2) + 1}"
         )
-        self.zarrData["datetime"] = [f"{datetime.datetime.now().isoformat()}"]
+        self.zarrData["datetime"] = np.array([f"{datetime.datetime.now().isoformat()}"])
         self.zarrData["graph"] = nx.to_numpy_array(self.graph.graph)
-        self.zarrData["origins"] = self.agentOrigins
-        self.zarrData["runtime_requested"] = [self.runtime]
+        self.zarrData["origins"] = np.array(self.agentOrigins)
+        self.zarrData["runtime_requested"] = np.array([self.runtime])
         self.zarrData.require_group("visits")
 
         # Subscribers.
