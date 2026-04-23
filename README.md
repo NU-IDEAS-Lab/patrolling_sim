@@ -65,7 +65,7 @@ Once prerequisites are installed, perform the following:
  3) Source the correct ROS 2 installation.
    
     ```bash
-    source /opt/ros/humble/setup.bash
+    source /opt/ros/jazzy/setup.bash
     ```
     
  4) Build the patrolling sim using Colcon, the ROS 2 build system.
