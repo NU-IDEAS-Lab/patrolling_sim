@@ -37,15 +37,7 @@
 
 #include <sstream>
 #include <string>
-// #include <ros/ros.h>
-// #include <ros/package.h> //to get pkg path
-// #include <move_base_msgs/MoveBaseAction.h>
-// #include <actionlib/client/simple_action_client.h>
-// // #include <tf/transform_broadcaster.h>
-// #include <tf/transform_listener.h>
-// #include <nav_msgs/Odometry.h>
-// #include <std_srvs/Empty.h>
-
+#include <rclcpp/rclcpp.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
@@ -80,6 +72,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->declare_parameter("goal_reached_wait", 3.0);
     this->declare_parameter("communication_delay", 0.2);
     this->declare_parameter("lost_message_rate", 0.0);
+    this->declare_parameter("enable_legacy_interference", false);
     this->declare_parameter("agent_count", 1);
     this->declare_parameter("tf_prefix", "");
 
@@ -92,6 +85,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     this->lost_message_rate = this->get_parameter("lost_message_rate").get_parameter_value().get<double>();
     this->agent_count = this->get_parameter("agent_count").get_parameter_value().get<int>(); //TODO: Make this /control/agent_count
     this->tf_prefix = this->get_parameter("tf_prefix").get_parameter_value().get<std::string>();
+    this->enable_interference = this->get_parameter("enable_legacy_interference").get_parameter_value().get<bool>();
 
 
     this->ID_ROBOT = this->get_parameter("id_robot").get_parameter_value().get<int>();
@@ -188,11 +182,11 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
         
     //Publicar dados de "odom" para nó de posições
     // positions_pub = nh.advertise<nav_msgs::Odometry>("positions", 1); //only concerned about the most recent
-    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 10);
+    this->positions_pub = this->create_publisher<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", rclcpp::QoS(rclcpp::KeepLast(100), rmw_qos_profile_sensor_data));
         
     //Subscrever posições de outros robots
     // positions_sub = nh.subscribe<nav_msgs::Odometry>("positions", 10, boost::bind(&PatrolAgent::positionsCB, this, _1));  
-    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", 100,
+    this->positions_sub = this->create_subscription<patrolling_sim_interfaces::msg::AgentTelemetry>("/positions", rclcpp::QoS(rclcpp::KeepLast(100), rmw_qos_profile_sensor_data),
         std::bind(&PatrolAgent::positionsCB, this, std::placeholders::_1));
     
     char string1[40];
@@ -218,7 +212,7 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     
     //Subscrever para obter dados de "odom" do robot corrente
     // odom_sub = nh.subscribe<nav_msgs::Odometry>(string1, 1, boost::bind(&PatrolAgent::odomCB, this, _1)); //size of the buffer = 1 (?)
-    odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("odom", 10,
+    odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("odom", rclcpp::QoS(rclcpp::KeepLast(100), rmw_qos_profile_sensor_data),
         std::bind(&PatrolAgent::odomCB, this, std::placeholders::_1));
     
     // Service client to clear the costmap.
@@ -227,8 +221,8 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     );
     
     //Publicar dados para "results"
-    results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", 100);
-    results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", 100,
+    results_pub = this->create_publisher<std_msgs::msg::Int16MultiArray>("/results", rclcpp::QoS(rclcpp::KeepLast(100), rmw_qos_profile_parameters));
+    results_sub = this->create_subscription<std_msgs::msg::Int16MultiArray>("/results", rclcpp::QoS(rclcpp::KeepLast(100), rmw_qos_profile_parameters),
         std::bind(&PatrolAgent::resultsCB, this, std::placeholders::_1));
 
     // last time comm delay has been applied
@@ -237,15 +231,14 @@ PatrolAgent::PatrolAgent() : rclcpp::Node("patrol_agent")
     // Wait for ready.
     ready();
 
-    // Clear costmap initially.
-    this->clearLocalCostmap(true);
-
-    rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
-
-    timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
+    RCLCPP_INFO(this->get_logger(), "Patrol agent %d initialized", this->ID_ROBOT);
 
     rclcpp::Rate rateSendPositions = rclcpp::Rate(1.0);
     this->timerPositions = rclcpp::create_timer(this, this->get_clock(), rateSendPositions.period(), std::bind(&PatrolAgent::onTimerSendPositions, this));
+
+    // Advertize readiness.
+    rclcpp::Rate rateAdvertizeReady = rclcpp::Rate(1.0);
+    this->timerAdvertizeReady = rclcpp::create_timer(this, this->get_clock(), rateAdvertizeReady.period(), std::bind(&PatrolAgent::initialize_node, this));
 }
 
 void PatrolAgent::ready() {
@@ -283,14 +276,17 @@ void PatrolAgent::ready() {
     } 
     RCLCPP_INFO(this->get_logger(), "Transform from map->base_link received.");
 
-    
-    /* Wait until all nodes are ready.. */
-    while(initialize && rclcpp::ok()){
-        initialize_node(); //announce that agent is alive
-        rclcpp::spin_some(this->get_node_base_interface());
-        loop_rate.sleep();
-    }    
+}
 
+void PatrolAgent::onExperimentInitialized() {
+
+    initialize = false;
+
+    // Clear costmap initially.
+    // this->clearLocalCostmap(true);
+
+    rclcpp::Rate rateRunLoop = rclcpp::Rate(30.0);
+    timer = this->create_wall_timer(rateRunLoop.period(), std::bind(&PatrolAgent::run_once, this));
 }
 
 void PatrolAgent::run_once() {
@@ -300,7 +296,7 @@ void PatrolAgent::run_once() {
         resend_goal_count=0;
     }
     else { // goal not complete (active)
-        if (interference) {
+        if (interference && this->enable_interference) {
             do_interference_behavior();
         }       
         
@@ -432,6 +428,11 @@ void PatrolAgent::update_idleness() {
 
 void PatrolAgent::initialize_node (){ //ID,msg_type,1
     
+    if(!initialize){
+        this->timerAdvertizeReady->cancel();
+        return;
+    }
+
     int value = ID_ROBOT;
     if (value==-1){value=0;}
     RCLCPP_INFO(this->get_logger(), "Initialize Node: Robot %d",value); 
@@ -894,7 +895,7 @@ void PatrolAgent::resultsCB(std_msgs::msg::Int16MultiArray::ConstSharedPtr msg) 
             // printf("Wait %.1f seconds (init pos:%s)\n",r,initial_positions.c_str());
 
             this->get_clock()->sleep_for(wait);
-            initialize = false;
+            this->onExperimentInitialized();
         }
 
 #if SIMULATE_FOREVER == false

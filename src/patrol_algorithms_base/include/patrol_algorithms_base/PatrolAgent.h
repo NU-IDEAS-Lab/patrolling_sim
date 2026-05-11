@@ -74,6 +74,7 @@ protected:
     int agent_count;
     int ID_ROBOT;
     std::string tf_prefix;
+    bool enable_interference;
 
     double xPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
     double yPos[NUM_MAX_ROBOTS]; //tabelas de posições (atençao ao index pro caso de 1 so robot)
@@ -83,6 +84,7 @@ protected:
 
     rclcpp::TimerBase::SharedPtr timer;
     rclcpp::TimerBase::SharedPtr timerPositions;
+    rclcpp::TimerBase::SharedPtr timerAdvertizeReady;
 
     std::string behavior_tree;
     std::string graph_file, mapname;
@@ -130,6 +132,7 @@ public:
     
     PatrolAgent();
     void ready();
+    void onExperimentInitialized();
     void initialize_node();
     void update_idleness();  // local idleness
     

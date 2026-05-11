@@ -51,7 +51,7 @@ def generate_launch_description():
             'attrition_times', default_value="-1.0,-1.0"
         ),
         DeclareLaunchArgument(
-            'agent_policy_dir', default_value=''
+            'agent_policy_dir', default_value="/dev/null"
         ),
         DeclareLaunchArgument(
             'params_file',

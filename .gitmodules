@@ -1,4 +1,4 @@
-[submodule "src/mas_simulation"]
-	path = src/mas_simulation
+[submodule "src/grex"]
+	path = src/grex
 	url = ../grex.git
 	branch = master
